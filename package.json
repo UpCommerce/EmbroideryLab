@@ -1,0 +1,10 @@
+{
+  "name": "embroidery-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --check server.mjs && node --check providers/wilcom.mjs && node --check providers/pulseid.mjs && node --check providers/melco.mjs && node --check providers/zsk.mjs"
+  }
+}

@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Embroidery Lab</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <h1>Embroidery Lab</h1>
+        <p id="provider-status">Provider</p>
+      </div>
+      <button id="run-button" class="primary-button" type="button" disabled>
+        Run conversion
+      </button>
+    </header>
+
+    <main class="workspace">
+      <section class="panel source-panel" aria-labelledby="source-title">
+        <div class="panel-heading">
+          <h2 id="source-title">Source</h2>
+          <button id="sample-button" class="ghost-button" type="button">Load sample</button>
+        </div>
+
+        <label id="drop-zone" class="drop-zone" for="file-input">
+          <input id="file-input" type="file" accept="image/png,image/jpeg,image/bmp,image/gif,image/tiff" />
+          <span id="drop-title">Choose image</span>
+          <span id="file-name">PNG, JPG, BMP, GIF, TIF</span>
+        </label>
+
+        <details class="sample-library" open>
+          <summary>Test images</summary>
+          <div id="sample-grid" class="sample-grid"></div>
+        </details>
+
+        <div class="preview-box source-preview">
+          <img id="source-image" alt="Source design preview" hidden />
+          <div id="source-empty" class="empty-state">No source selected</div>
+        </div>
+
+        <div class="field-row">
+          <label>
+            <span class="label-with-tip">Width mm <span class="tip" tabindex="0" data-tip="Target physical embroidery width. For PulseID it is sent as FinalWidth after converting mm to embroidery points; it changes scale and stitch generation, not just preview pixels.">?</span></span>
+            <input id="width-mm" type="number" min="1" step="1" value="90" />
+          </label>
+          <label>
+            <span class="label-with-tip">Height mm <span class="tip" tabindex="0" data-tip="Target physical embroidery height. With proportional resize enabled, PulseID fits the design inside width and height while preserving aspect ratio.">?</span></span>
+            <input id="height-mm" type="number" min="1" step="1" value="45" />
+          </label>
+        </div>
+      </section>
+
+      <section class="panel controls-panel" aria-labelledby="controls-title">
+        <h2 id="controls-title">Setup</h2>
+
+        <div class="control-block">
+          <div class="field-label">Provider</div>
+          <div id="provider-tabs" class="segmented"></div>
+        </div>
+
+        <div class="control-block">
+          <div class="field-label">Mode</div>
+          <div class="segmented">
+            <button class="segment active" type="button" data-mode="trueview">TrueView</button>
+            <button class="segment" type="button" data-mode="design">Design file</button>
+          </div>
+        </div>
+
+        <div class="control-block">
+          <label>
+            <span class="label-with-tip">Format <span class="tip" tabindex="0" data-tip="Production file format for Design file mode. PulseID supports DST, PES, PXF, TCF, Z00 and PCF. TrueView mode only needs the preview PNG.">?</span></span>
+            <select id="design-format">
+              <option value="emb">EMB</option>
+              <option value="dst">DST</option>
+              <option value="pes">PES</option>
+              <option value="exp">EXP</option>
+              <option value="jef">JEF</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="wilcom-options" class="provider-options" hidden>
+          <div class="control-block">
+            <div class="field-label">Wilcom output</div>
+            <label>
+              <span class="label-with-tip">DPI <span class="tip" tabindex="0" data-tip="Wilcom render/output DPI. This affects generated preview density for Wilcom requests, not PulseID.">?</span></span>
+              <input id="dpi" type="number" min="72" max="300" step="1" value="160" />
+            </label>
+          </div>
+
+          <div id="thread-palette-block" class="control-block">
+            <div class="field-label">Thread palette <span class="tip" tabindex="0" data-tip="Wilcom nominated thread colors. PulseID does not use this hex palette; PulseID color behavior belongs in its provider panel.">?</span></div>
+            <div id="swatches" class="swatches"></div>
+            <input id="threads" type="text" value="#0073cf,#ffffff,#ff5b00,#ff2ba6,#64c05a" />
+          </div>
+
+          <div class="toggle-list">
+            <label id="remove-background-toggle" class="toggle">
+              <input id="remove-background" type="checkbox" checked />
+              <span>Remove background <span class="tip" tabindex="0" data-tip="Wilcom bitmap option: ask Wilcom to remove background before auto-digitizing. Not used by PulseID.">?</span></span>
+            </label>
+          </div>
+        </div>
+
+        <div id="pulse-options" class="provider-options" hidden>
+          <div class="control-block">
+            <div class="field-label">Pulse digitizing</div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Thread type <span class="tip" tabindex="0" data-tip="PulseID thread material model. It can affect how the engine interprets stitch appearance. Polyester is the safest default for apparel-like tests.">?</span></span>
+                <select id="pulse-thread-type">
+                  <option value="ttPolyester">Polyester</option>
+                  <option value="ttRayon">Rayon</option>
+                  <option value="ttCotton">Cotton</option>
+                  <option value="ttNylon">Nylon</option>
+                  <option value="ttMetallic">Metallic</option>
+                </select>
+              </label>
+              <label>
+                <span class="label-with-tip">Thread thickness <span class="tip" tabindex="0" data-tip="Optional PulseID thread thickness value. Leave empty to use PulseID defaults; extreme values can distort the digitizing result.">?</span></span>
+                <input id="pulse-thread-thickness" type="number" min="1" max="99" step="1" value="" placeholder="default" />
+              </label>
+            </div>
+          </div>
+
+          <div class="toggle-list compact">
+            <label class="toggle">
+              <input id="pulse-ignore-small-areas" type="checkbox" checked />
+              <span>Ignore small areas <span class="tip" tabindex="0" data-tip="Drops tiny background/noise regions during autodigitizing. Usually useful for uploaded raster artwork.">?</span></span>
+            </label>
+            <label class="toggle">
+              <input id="pulse-create-satin" type="checkbox" checked />
+              <span>Create satin/steil <span class="tip" tabindex="0" data-tip="Lets PulseID create satin and steil segments. If disabled, complex fill segments are used more often.">?</span></span>
+            </label>
+            <label class="toggle">
+              <input id="pulse-add-steil-borders" type="checkbox" />
+              <span>Add steil borders <span class="tip" tabindex="0" data-tip="Adds steil borders around large complex fill areas. Can make edges stronger but may add density.">?</span></span>
+            </label>
+            <label class="toggle">
+              <input id="pulse-generate-background" type="checkbox" />
+              <span>Stitch background <span class="tip" tabindex="0" data-tip="If enabled, PulseID tries to stitch the image background too. Usually keep off for Zakeke-style transparent/logo artwork.">?</span></span>
+            </label>
+          </div>
+
+          <div class="control-block">
+            <div class="field-label">Pulse sequencing</div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Sequence <span class="tip" tabindex="0" data-tip="Controls sewing order. Min colors reduces color changes, Min jumps reduces jumps, Smart tries to place borders after fills.">?</span></span>
+                <select id="pulse-sequence-type">
+                  <option value="stMinimizeColorChanges">Min colors</option>
+                  <option value="stSmart">Smart</option>
+                  <option value="stMinimizeJumps">Min jumps</option>
+                  <option value="stNone">None</option>
+                </select>
+              </label>
+              <label>
+                <span class="label-with-tip">Trim <span class="tip" tabindex="0" data-tip="Controls thread trims. Always trims aggressively, Never avoids trims, Trim at uses a distance threshold.">?</span></span>
+                <select id="pulse-trim-type">
+                  <option value="ttAlways">Always</option>
+                  <option value="ttNever">Never</option>
+                  <option value="ttTrimAt">Trim at</option>
+                </select>
+              </label>
+            </div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Lock <span class="tip" tabindex="0" data-tip="Controls lock stitches. Around trim is the documented default and adds locks around trim points.">?</span></span>
+                <select id="pulse-lock-type">
+                  <option value="ltAroundTrim">Around trim</option>
+                  <option value="ltAlways">Always</option>
+                  <option value="ltNever">Never</option>
+                </select>
+              </label>
+              <label>
+                <span class="label-with-tip">Trim threshold <span class="tip" tabindex="0" data-tip="Optional distance threshold for Trim at behavior. Empty uses PulseID default.">?</span></span>
+                <input id="pulse-trim-threshold" type="number" min="0" step="0.1" value="" placeholder="default" />
+              </label>
+            </div>
+          </div>
+
+          <details class="advanced-options">
+            <summary>Advanced Pulse options</summary>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Run max width <span class="tip" tabindex="0" data-tip="Advanced threshold in embroidery points. Segments at or below this width tend to become run stitches.">?</span></span>
+                <input id="pulse-maximum-run-width" type="number" min="1" step="1" value="" placeholder="default" />
+              </label>
+              <label>
+                <span class="label-with-tip">Satin max width <span class="tip" tabindex="0" data-tip="Advanced threshold in embroidery points for satin columns. Wider areas become complex fill.">?</span></span>
+                <input id="pulse-maximum-satin-width" type="number" min="1" step="1" value="" placeholder="default" />
+              </label>
+            </div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Steil max width <span class="tip" tabindex="0" data-tip="Advanced threshold in embroidery points for steil stitches. Empty uses PulseID defaults.">?</span></span>
+                <input id="pulse-maximum-steil-width" type="number" min="1" step="1" value="" placeholder="default" />
+              </label>
+              <label>
+                <span class="label-with-tip">Num colors <span class="tip" tabindex="0" data-tip="Optional color reduction. Leave empty unless testing deliberately: PulseID can error if this exceeds the original image color count.">?</span></span>
+                <input id="pulse-num-colors" type="number" min="1" step="1" value="" placeholder="auto" />
+              </label>
+            </div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Render width <span class="tip" tabindex="0" data-tip="Preview PNG width in pixels. It affects only the returned preview image size, not the physical embroidery size.">?</span></span>
+                <input id="pulse-render-width" type="number" min="100" step="10" value="1100" />
+              </label>
+              <label>
+                <span class="label-with-tip">Render height <span class="tip" tabindex="0" data-tip="Preview PNG height in pixels. Increase it for tall designs so the preview is not cropped.">?</span></span>
+                <input id="pulse-render-height" type="number" min="100" step="10" value="1600" />
+              </label>
+            </div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Padding <span class="tip" tabindex="0" data-tip="Pixel margin around the rendered embroidery preview. It only affects the preview image.">?</span></span>
+                <input id="pulse-render-padding" type="number" min="0" step="1" value="40" />
+              </label>
+              <label>
+                <span class="label-with-tip">Recipe <span class="tip" tabindex="0" data-tip="PulseID recipe name applied during render/generate. Normal is the documented default; other recipes depend on the PulseID setup.">?</span></span>
+                <input id="pulse-recipe" type="text" value="Normal" />
+              </label>
+            </div>
+            <div class="toggle-list compact">
+              <label class="toggle">
+                <input id="pulse-proportional-resize" type="checkbox" checked />
+                <span>Proportional resize <span class="tip" tabindex="0" data-tip="Fits the design inside Width/Height while preserving aspect ratio. Disable only to force independent stretching.">?</span></span>
+              </label>
+              <label class="toggle">
+                <input id="pulse-lighten-shadows" type="checkbox" />
+                <span>Lighten shadows <span class="tip" tabindex="0" data-tip="Lightens preview shadows, useful when light thread colors look too dark in render.">?</span></span>
+              </label>
+              <label class="toggle">
+                <input id="pulse-transparent-preview" type="checkbox" checked />
+                <span>Transparent preview <span class="tip" tabindex="0" data-tip="Returns preview PNG over transparent background. Disable for opaque white background.">?</span></span>
+              </label>
+              <label class="toggle">
+                <input id="pulse-use-image-dimensions" type="checkbox" />
+                <span>Use image dimensions <span class="tip" tabindex="0" data-tip="Lets PulseID include source image dimensions in final sizing. Usually off because the Lab controls size with Width/Height mm.">?</span></span>
+              </label>
+            </div>
+          </details>
+        </div>
+
+        <div id="status-box" class="status-box">Idle</div>
+      </section>
+
+      <section class="panel result-panel" aria-labelledby="result-title">
+        <div class="panel-heading">
+          <h2 id="result-title">Result</h2>
+          <span id="run-id" class="run-id"></span>
+        </div>
+
+        <div class="preview-box result-preview">
+          <img id="result-image" alt="Embroidery preview result" hidden />
+          <div id="result-empty" class="empty-state">No result yet</div>
+        </div>
+
+        <div class="metrics" id="metrics"></div>
+        <div class="files" id="files"></div>
+        <pre id="request-xml" class="request-xml" hidden></pre>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
