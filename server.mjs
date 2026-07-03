@@ -1,9 +1,20 @@
 import { createServer } from "node:http";
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import { loadEnv, ROOT_DIR } from "./lib/env.mjs";
+import {
+  backfillExecutionsFromRuns,
+  getCompare,
+  listCompares,
+  listExecutions,
+  openHistoryDatabase,
+  recordCompare,
+  recordExecution,
+  runFilesFromDirectory,
+} from "./lib/history-db.mjs";
+import { preprocessSourceImage } from "./lib/source-preprocess.mjs";
 import { getProvider, getProviders } from "./providers/index.mjs";
 
 loadEnv();
@@ -12,10 +23,20 @@ const SERVER_DIR = dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = join(SERVER_DIR, "public");
 const SAMPLES_DIR = join(PUBLIC_DIR, "samples");
 const RUNS_DIR = join(SERVER_DIR, "runs");
+const LOGS_DIR = join(SERVER_DIR, "logs");
+const DATA_DIR = join(SERVER_DIR, "data");
+const SOURCE_ORIGINALS_DIR = join(SERVER_DIR, "source-originals");
 const MAX_BODY_BYTES = 25 * 1024 * 1024;
 const SAMPLE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tif", ".tiff"]);
+const WILCOM_MAX_SOURCE_PIXELS = 4_900_000;
+const WILCOM_MAX_SOURCE_BYTES = 1_900_000;
 
 mkdirSync(RUNS_DIR, { recursive: true });
+mkdirSync(LOGS_DIR, { recursive: true });
+mkdirSync(DATA_DIR, { recursive: true });
+mkdirSync(SOURCE_ORIGINALS_DIR, { recursive: true });
+openHistoryDatabase(join(DATA_DIR, "history.sqlite"));
+backfillExecutionsFromRuns(RUNS_DIR);
 
 const server = createServer(async (request, response) => {
   try {
@@ -29,9 +50,27 @@ const server = createServer(async (request, response) => {
       return sendJson(response, 200, { samples: listSamples() });
     }
 
+    if (request.method === "GET" && url.pathname === "/api/history") {
+      return sendJson(response, 200, {
+        compares: listCompares({ limit: numberParam(url.searchParams.get("compareLimit"), 50) }),
+        executions: listExecutions({ limit: numberParam(url.searchParams.get("executionLimit"), 150) }),
+      });
+    }
+
+    if (request.method === "GET" && url.pathname.startsWith("/api/history/compares/")) {
+      const id = decodeURIComponent(url.pathname.replace(/^\/api\/history\/compares\//, ""));
+      const compare = getCompare(id);
+      return compare ? sendJson(response, 200, { compare }) : sendJson(response, 404, { error: "Compare non trovato" });
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/history/compares") {
+      const body = await readJsonBody(request);
+      return sendJson(response, 200, { compare: recordCompare(body) });
+    }
+
     if (request.method === "POST" && url.pathname === "/api/convert") {
       const body = await readJsonBody(request);
-      return handleConvert(response, body);
+      return await handleConvert(response, body);
     }
 
     if (request.method === "GET" && url.pathname.startsWith("/runs/")) {
@@ -45,10 +84,8 @@ const server = createServer(async (request, response) => {
     return sendJson(response, 405, { error: "Method not allowed" });
   } catch (error) {
     const status = error.status && Number.isInteger(error.status) ? error.status : 500;
-    return sendJson(response, status, {
-      error: error.message ?? "Unexpected error",
-      details: error.errorInfo ?? undefined,
-    });
+    logServerError(request, error, status);
+    return sendJson(response, status, buildErrorResponse(error));
   }
 });
 
@@ -64,16 +101,91 @@ async function handleConvert(response, body) {
   const image = parseImagePayload(body.image);
   const runId = createRunId(provider.id);
   const runDir = join(RUNS_DIR, runId);
+  mkdirSync(runDir, { recursive: true });
 
-  const result = await provider.convert(image, body.options ?? {}, runDir);
-  return sendJson(response, 200, {
+  let result;
+  let sourcePreprocess;
+  try {
+    const preprocessing = preprocessingOptionsForProvider(provider.id, body.options?.preprocessing ?? {});
+    sourcePreprocess = await preprocessSourceImage(image, preprocessing, {
+      runDir,
+      samplesDir: SAMPLES_DIR,
+      sourceOriginalsDir: SOURCE_ORIGINALS_DIR,
+    });
+    result = await provider.convert(sourcePreprocess.image, body.options ?? {}, runDir, {
+      samplesDir: SAMPLES_DIR,
+      sourceOriginalsDir: SOURCE_ORIGINALS_DIR,
+      sourcePreprocess,
+    });
+  } catch (error) {
+    writeRunErrorLog({
+      error,
+      providerId: provider.id,
+      runId,
+      runDir,
+      image,
+      sourcePreprocess,
+      options: body.options ?? {},
+    });
+    recordExecution({
+      runId,
+      providerId: provider.id,
+      ok: false,
+      status: statusForError(error),
+      error,
+      image,
+      sourcePreprocess: sourcePreprocess?.manifest,
+      options: body.options ?? {},
+      runFiles: runFilesFromDirectory(runId, runDir),
+    });
+    throw error;
+  }
+
+  const runFiles = ([...(sourcePreprocess?.runFiles ?? []), ...(result.runFiles ?? [])]).map((file) => ({
+    ...file,
+    url: `/runs/${runId}/${encodeURIComponent(file.name)}`,
+  }));
+  const payload = {
     ...result,
     runId,
-    runFiles: (result.runFiles ?? []).map((file) => ({
-      ...file,
-      url: `/runs/${runId}/${encodeURIComponent(file.name)}`,
-    })),
+    sourcePreprocess: sourcePreprocess?.manifest,
+    runFiles,
+  };
+
+  recordExecution({
+    runId,
+    providerId: provider.id,
+    ok: true,
+    status: 200,
+    image,
+    sourcePreprocess: sourcePreprocess?.manifest,
+    options: body.options ?? {},
+    result,
+    runFiles,
   });
+
+  return sendJson(response, 200, payload);
+}
+
+function preprocessingOptionsForProvider(providerId, requestedOptions) {
+  const options = { ...(requestedOptions ?? {}) };
+  if (providerId !== "wilcom") return options;
+
+  options.maxSourcePixels = stricterLimit(options.maxSourcePixels, WILCOM_MAX_SOURCE_PIXELS);
+  options.maxSourceBytes = stricterLimit(options.maxSourceBytes, WILCOM_MAX_SOURCE_BYTES);
+  return options;
+}
+
+function stricterLimit(value, fallback) {
+  const number = Number(value);
+  if (Number.isFinite(number) && number > 0) return Math.min(number, fallback);
+  return fallback;
+}
+
+function numberParam(value, fallback) {
+  const number = Number(value);
+  if (!Number.isInteger(number) || number < 1) return fallback;
+  return Math.min(number, 500);
 }
 
 function listSamples() {
@@ -193,6 +305,101 @@ function contentType(filePath) {
   if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
   if (lower.endsWith(".xml")) return "application/xml; charset=utf-8";
   return "application/octet-stream";
+}
+
+function writeRunErrorLog({ error, providerId, runId, runDir, image, sourcePreprocess, options }) {
+  mkdirSync(runDir, { recursive: true });
+  const logFileName = "error.json";
+  const logPath = join(runDir, logFileName);
+  const publicLogPath = `/runs/${runId}/${logFileName}`;
+  const entry = {
+    timestamp: new Date().toISOString(),
+    scope: "conversion",
+    provider: providerId,
+    runId,
+    status: statusForError(error),
+    error: serializeError(error),
+    image: summarizeImage(image),
+    sourcePreprocess: sourcePreprocess?.manifest,
+    options: sanitizeForLog(options),
+  };
+
+  writeFileSync(logPath, JSON.stringify(entry, null, 2), "utf8");
+  error.runId = runId;
+  error.logFile = publicLogPath;
+}
+
+function logServerError(request, error, status) {
+  const entry = {
+    timestamp: new Date().toISOString(),
+    scope: "http",
+    method: request.method,
+    url: request.url,
+    status,
+    runId: error.runId,
+    logFile: error.logFile,
+    error: serializeError(error),
+  };
+
+  appendFileSync(join(LOGS_DIR, "server-errors.ndjson"), `${JSON.stringify(entry)}\n`, "utf8");
+  console.error(
+    `[${entry.timestamp}] ${status} ${request.method} ${request.url} ${error.message ?? "Unexpected error"}${
+      error.runId ? ` runId=${error.runId}` : ""
+    }${error.logFile ? ` log=${error.logFile}` : ""}`
+  );
+}
+
+function buildErrorResponse(error) {
+  return {
+    error: error.message ?? "Unexpected error",
+    details: error.errorInfo ?? undefined,
+    runId: error.runId,
+    logFile: error.logFile,
+    upstreamResponse: truncateText(error.responseBody),
+  };
+}
+
+function serializeError(error) {
+  return sanitizeForLog({
+    name: error.name,
+    message: error.message,
+    status: statusForError(error),
+    code: error.code,
+    details: error.errorInfo,
+    responseBody: error.responseBody,
+    responseXml: error.responseXml,
+    stack: error.stack,
+  });
+}
+
+function summarizeImage(image) {
+  return {
+    name: image.name,
+    mimeType: image.mimeType,
+    bytes: image.base64 ? Buffer.byteLength(image.base64, "base64") : undefined,
+  };
+}
+
+function sanitizeForLog(value) {
+  return JSON.parse(
+    JSON.stringify(value, (key, item) => {
+      if (/api[-_]?key|authorization|token|secret|password|app[-_]?key/i.test(key)) {
+        return item ? "[redacted]" : item;
+      }
+      if (typeof item === "string") return truncateText(item, 12000);
+      return item;
+    })
+  );
+}
+
+function truncateText(value, maxLength = 4000) {
+  if (value === undefined || value === null) return undefined;
+  const text = String(value);
+  return text.length > maxLength ? `${text.slice(0, maxLength)}... [truncated ${text.length - maxLength} chars]` : text;
+}
+
+function statusForError(error) {
+  return error.status && Number.isInteger(error.status) ? error.status : 500;
 }
 
 function createRunId(providerId) {

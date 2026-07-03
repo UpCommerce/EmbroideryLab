@@ -1,10 +1,9 @@
-import { mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { basename, extname, join, parse, resolve } from "node:path";
+import sharp from "sharp";
 
-const DEFAULT_BASE_URL = "https://client.livedesignerfusion.com";
-const SUPPORTED_EMBROIDERY_FORMATS = new Set(["ofm", "exp", "dst"]);
-const SUPPORTED_VECTOR_FORMATS = new Set(["svg", "svgz", "png", "eps"]);
-const TOKEN_MODES = new Set(["archive", "definition", "file", "preview"]);
+const DEFAULT_BASE_URL = "https://apis.melcocloud.com";
+const SUPPORTED_OUTPUT_FORMATS = new Set(["ofm", "exp", "dst"]);
 
 export const melcoProvider = {
   id: "melco",
@@ -12,215 +11,175 @@ export const melcoProvider = {
     const missing = missingConfiguration();
     return {
       id: "melco",
-      name: "Melco Fusion",
+      name: "Melco Cloud",
       status: missing.length === 0 ? "ready" : "unavailable",
       configured: missing.length === 0,
-      modes: ["fusion-token"],
+      modes: ["trueview", "design"],
       baseUrl: baseUrl(),
       missing,
       reason:
         missing.length === 0
           ? null
-          : "Melco Fusion public docs expose fulfillment for existing personalization tokens, but not raw bitmap auto-digitizing. Configure Fusion username, auth header, and token to fetch real fulfillment outputs.",
+          : "Melco Cloud AutoDigitize richiede una MELCO_CLOUD_API_KEY o un Authorization header/token valido.",
     };
   },
-  async convert(input, options, runDir) {
+  async convert(input, options, runDir, context = {}) {
     mkdirSync(runDir, { recursive: true });
 
+    const mode = options.mode === "design" ? "design" : "trueview";
+    const outputFormat =
+      mode === "design"
+        ? enumParam(
+            options.designFormat ?? process.env.MELCO_CLOUD_OUTPUT_FORMAT,
+            SUPPORTED_OUTPUT_FORMATS,
+            "ofm",
+            "Melco output format"
+          )
+        : undefined;
     const melcoOptions = options.melco ?? {};
-    const token = normalizeOptionalText(melcoOptions.token ?? process.env.MELCO_FUSION_TOKEN);
-    const username = normalizeOptionalText(melcoOptions.username ?? process.env.MELCO_FUSION_USERNAME);
-    const authHeader = normalizeOptionalText(process.env.MELCO_FUSION_AUTH_HEADER);
-    const mode = enumParam(melcoOptions.mode, TOKEN_MODES, "archive", "Melco mode");
-    const embFormat = enumParam(
-      melcoOptions.embFormat ?? options.designFormat,
-      SUPPORTED_EMBROIDERY_FORMATS,
-      "ofm",
-      "Melco embroidery format"
-    );
-    const vectorFormat = enumParam(
-      melcoOptions.vectorFormat,
-      SUPPORTED_VECTOR_FORMATS,
-      "png",
-      "Melco vector/raster format"
-    );
-    const dpi = positiveIntegerOrDefault(melcoOptions.dpi, options.dpi ?? 300, "Melco DPI");
-    const width = positiveIntegerOrDefault(melcoOptions.previewWidth, 900, "Melco preview width");
-    const maxHeight = optionalNonNegativeInteger(melcoOptions.previewMaxHeight, "Melco preview max height");
-    const rotate = optionalRotation(melcoOptions.rotateDegrees);
-    const includeAllElements = Boolean(melcoOptions.includeAllElements ?? false);
-    const recalculateStitches = Boolean(melcoOptions.recalculateStitches ?? false);
-    const fulfillmentId = normalizeOptionalText(melcoOptions.fulfillmentId);
-    const requestedFileName = normalizeOptionalText(melcoOptions.fileName);
-    const fabricStyle = normalizeOptionalText(melcoOptions.fabricStyle);
-
+    const preparedSource = await prepareMelcoSource(input, melcoOptions, runDir, context);
+    const apiInput = preparedSource.input;
+    const dimensions = melcoDimensionParams(options, melcoOptions);
     const requestInfo = {
       provider: "melco",
+      api: "Melco Cloud AutoDigitize",
       baseUrl: baseUrl(),
+      endpoints: {
+        login: "/auth/apikey",
+        metadata: "/design-editor/digitize/metadata",
+        preview: "/design-editor/digitize/preview",
+        download: "/design-editor/digitize/download",
+      },
       mode,
-      configured: Boolean(username && token && authHeader),
-      missing: missingConfiguration({ username, token, authHeader }),
+      configured: missingConfiguration().length === 0,
+      missing: missingConfiguration(),
       source: {
         name: input.name,
         mimeType: input.mimeType,
-        bytes: input.base64 ? Buffer.from(input.base64, "base64").length : 0,
+        bytes: preparedSource.original.bytes,
+        width: preparedSource.original.width,
+        height: preparedSource.original.height,
+        format: preparedSource.original.format,
+      },
+      sentSource: {
+        name: apiInput.name,
+        mimeType: apiInput.mimeType,
+        bytes: preparedSource.sent.bytes,
+        width: preparedSource.sent.width,
+        height: preparedSource.sent.height,
+        format: preparedSource.sent.format,
+      },
+      preprocessing: preparedSource.preprocessing,
+      request: {
+        widthMm: dimensions.widthMm,
+        heightMm: dimensions.heightMm,
+        new_width: dimensions.newWidth,
+        new_height: dimensions.newHeight,
+        format: outputFormat ? outputFormat.toUpperCase() : undefined,
       },
       note:
-        "Fusion fulfillment works from an existing personalization token. Public docs do not expose a raw bitmap upload/autodigitize endpoint.",
-      request: {
-        username: username || null,
-        token: token ? redactToken(token) : null,
-        mode,
-        embFormat,
-        vectorFormat,
-        dpi,
-        width,
-        maxHeight,
-        rotate,
-        includeAllElements,
-        recalculateStitches,
-        fulfillmentId: fulfillmentId || null,
-        fileName: requestedFileName || null,
-        fabricStyle: fabricStyle || null,
-      },
+        "Melco demo maps 1 inch to 254 units, so the Lab sends dimensions as mm * 10. Auth follows the demo: x-api-key plus optional Authorization 'melco {token}'.",
     };
     writeFileSync(join(runDir, "melco-request.json"), JSON.stringify(requestInfo, null, 2), "utf8");
 
-    if (!username || !token || !authHeader) {
-      throw httpError(
-        400,
-        "Melco Fusion non configurato: servono MELCO_FUSION_USERNAME, MELCO_FUSION_AUTH_HEADER e un personalization token."
-      );
+    const missing = missingConfiguration();
+    if (missing.length > 0) {
+      throw httpError(400, `Melco Cloud non configurato: mancano ${missing.join(", ")}`);
     }
 
-    const headers = { Authorization: authHeader };
-    const runFiles = [{ name: "melco-request.json", kind: "request" }];
+    const auth = await createAuthContext();
+    const runFiles = [...preparedSource.runFiles, { name: "melco-request.json", kind: "request" }];
     const files = [];
 
-    if (mode === "definition") {
-      const definition = await fetchJson(buildDefinitionUrl({ username, token, includeAllElements, recalculateStitches }), headers);
-      writeFileSync(join(runDir, "melco-definition.json"), JSON.stringify(definition, null, 2), "utf8");
-      runFiles.push({ name: "melco-definition.json", kind: "metadata" });
-      ensureMelcoSuccess(definition);
-      return result({ files, runFiles, designInfo: definition, requestInfo });
-    }
+    const metadata = await postAutoDigitizeJson(apiInput, "/design-editor/digitize/metadata", dimensions, auth);
+    writeFileSync(join(runDir, "melco-metadata.json"), JSON.stringify(metadata, null, 2), "utf8");
+    runFiles.push({ name: "melco-metadata.json", kind: "metadata" });
 
-    if (mode === "preview") {
-      const id = requireFulfillmentId(fulfillmentId, mode);
-      const preview = await fetchBinary(buildPreviewUrl({ username, token, fulfillmentId: id, width, maxHeight }), headers, "Melco preview");
-      writeFileSync(join(runDir, "melco-preview.png"), preview.buffer);
-      files.push({
-        name: "melco-preview.png",
-        mimeType: preview.contentType || "image/png",
-        base64: preview.buffer.toString("base64"),
-      });
-      runFiles.push({ name: "melco-preview.png", kind: "preview" });
-      return result({ files, runFiles, designInfo: null, requestInfo });
-    }
-
-    if (mode === "file") {
-      const id = requireFulfillmentId(fulfillmentId, mode);
-      const fileName = sanitizeFileName(requestedFileName || `melco-design.${embFormat}`);
-      const file = await fetchBinary(
-        buildFileUrl({ username, token, fulfillmentId: id, fileName, dpi, rotate, fabricStyle }),
-        headers,
-        "Melco fulfillment file"
-      );
-      writeFileSync(join(runDir, fileName), file.buffer);
-      files.push({
-        name: fileName,
-        mimeType: file.contentType || inferMimeType(fileName),
-        base64: file.buffer.toString("base64"),
-      });
-      runFiles.push({ name: fileName, kind: fileName.toLowerCase().endsWith(".png") ? "preview" : "design" });
-      return result({ files, runFiles, designInfo: null, requestInfo });
-    }
-
-    const archive = await fetchBinary(
-      buildArchiveUrl({
-        username,
-        token,
-        embFormat,
-        vectorFormat,
-        dpi,
-        rotate,
-        includeAllElements,
-        recalculateStitches,
-        fabricStyle,
-      }),
-      headers,
-      "Melco fulfillment archive"
-    );
-    writeFileSync(join(runDir, "melco-fulfillment.zip"), archive.buffer);
+    const preview = await postAutoDigitizeBinary(apiInput, "/design-editor/digitize/preview", dimensions, auth, {}, "Melco preview");
+    const previewName = fileNameFromResponse(preview, "melco-preview.png");
+    writeFileSync(join(runDir, previewName), preview.buffer);
     files.push({
-      name: "melco-fulfillment.zip",
-      mimeType: archive.contentType || "application/zip",
-      base64: archive.buffer.toString("base64"),
+      name: previewName,
+      mimeType: normalizeMimeType(preview.contentType, previewName),
+      base64: preview.buffer.toString("base64"),
     });
-    runFiles.push({ name: "melco-fulfillment.zip", kind: "design" });
-    return result({ files, runFiles, designInfo: null, requestInfo });
+    runFiles.push({ name: previewName, kind: "preview" });
+
+    if (mode === "design") {
+      const download = await postAutoDigitizeBinary(
+        apiInput,
+        "/design-editor/digitize/download",
+        dimensions,
+        auth,
+        { format: outputFormat.toUpperCase() },
+        "Melco design download"
+      );
+      const designName = fileNameFromResponse(download, `melco-design.${outputFormat}`);
+      writeFileSync(join(runDir, designName), download.buffer);
+      files.push({
+        name: designName,
+        mimeType: normalizeMimeType(download.contentType, designName),
+        base64: download.buffer.toString("base64"),
+      });
+      runFiles.push({ name: designName, kind: "design" });
+    }
+
+    return {
+      provider: "melco",
+      requestXml: JSON.stringify(requestInfo, null, 2),
+      files,
+      designInfo: metadata,
+      runFiles,
+    };
   },
 };
 
-function buildDefinitionUrl({ username, token, includeAllElements, recalculateStitches }) {
-  return fusionUrl(username, "TokenFulfillment/GetDefinition", {
-    Token: token,
-    Format: "json",
-    IncludeAllElements: boolParam(includeAllElements),
-    RecalculateStitches: boolParam(recalculateStitches),
+async function createAuthContext() {
+  const apiKey = normalizeOptionalText(process.env.MELCO_CLOUD_API_KEY);
+  const explicitHeader = normalizeOptionalText(process.env.MELCO_CLOUD_AUTH_HEADER);
+  const explicitToken = normalizeOptionalText(process.env.MELCO_CLOUD_AUTH_TOKEN);
+
+  if (explicitHeader) return { apiKey, authorization: explicitHeader };
+  if (explicitToken) return { apiKey, authorization: normalizeAuthorizationToken(explicitToken) };
+  if (!apiKey) return { apiKey: "", authorization: "" };
+
+  const response = await fetch(apiUrl("/auth/apikey"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+    },
+    body: JSON.stringify({
+      api_key: apiKey,
+      device_info: {
+        name: process.env.MELCO_CLOUD_DEVICE_NAME || "Embroidery Lab",
+      },
+    }),
   });
-}
-
-function buildArchiveUrl({
-  username,
-  token,
-  embFormat,
-  vectorFormat,
-  dpi,
-  rotate,
-  includeAllElements,
-  recalculateStitches,
-  fabricStyle,
-}) {
-  return fusionUrl(username, "TokenFulfillment/GetArchive", {
-    Token: token,
-    EmbFormat: embFormat,
-    VectorFormat: vectorFormat,
-    DPI: String(dpi),
-    IncludeAllElements: boolParam(includeAllElements),
-    RecalculateStitches: boolParam(recalculateStitches),
-    ...(rotate ? { RotAng: String(rotate) } : {}),
-    ...(fabricStyle ? { FabricStyle: fabricStyle } : {}),
-  });
-}
-
-function buildFileUrl({ username, token, fulfillmentId, fileName, dpi, rotate, fabricStyle }) {
-  return fusionUrl(username, "TokenFulfillment/GetFile", {
-    Token: token,
-    FulfillmentID: fulfillmentId,
-    FileName: fileName,
-    DPI: String(dpi),
-    ...(rotate ? { RotAng: String(rotate) } : {}),
-    ...(fabricStyle ? { FabricStyle: fabricStyle } : {}),
-  });
-}
-
-function buildPreviewUrl({ username, token, fulfillmentId, width, maxHeight }) {
-  return fusionUrl(username, "TokenFulfillment/GetfulfillmentPreview", {
-    Token: token,
-    FulfillmentID: fulfillmentId,
-    Width: String(width),
-    ...(maxHeight !== undefined ? { MaxHeight: String(maxHeight) } : {}),
-  });
-}
-
-function fusionUrl(username, path, params) {
-  return `${baseUrl()}/${encodeURIComponent(username)}/${path}?${new URLSearchParams(params)}`;
-}
-
-async function fetchJson(url, headers) {
-  const response = await fetch(url, { headers });
   const text = await response.text();
+
+  if (!response.ok) {
+    throw httpError(response.status, `Melco auth HTTP ${response.status}`, { responseBody: text });
+  }
+
+  let body;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    throw httpError(502, "Melco auth ha restituito una risposta non JSON", { responseBody: text });
+  }
+
+  if (!body.token) {
+    throw httpError(502, "Melco auth non ha restituito token", { responseBody: text });
+  }
+
+  return { apiKey, authorization: `melco ${body.token}` };
+}
+
+async function postAutoDigitizeJson(input, path, dimensions, auth) {
+  const response = await postAutoDigitize(input, path, dimensions, auth);
+  const text = await response.text();
+
   if (!response.ok) {
     throw httpError(response.status, `Melco HTTP ${response.status}`, { responseBody: text });
   }
@@ -232,9 +191,11 @@ async function fetchJson(url, headers) {
   }
 }
 
-async function fetchBinary(url, headers, label) {
-  const response = await fetch(url, { headers });
+async function postAutoDigitizeBinary(input, path, dimensions, auth, extraParams, label) {
+  const response = await postAutoDigitize(input, path, dimensions, auth, extraParams);
   const contentType = response.headers.get("content-type") ?? "";
+  const contentDisposition = response.headers.get("content-disposition") ?? "";
+  const xFilename = response.headers.get("x-filename") ?? "";
   const buffer = Buffer.from(await response.arrayBuffer());
 
   if (!response.ok) {
@@ -243,47 +204,297 @@ async function fetchBinary(url, headers, label) {
     });
   }
 
-  if (contentType.includes("json") || contentType.includes("xml") || contentType.includes("text")) {
-    const text = buffer.toString("utf8");
-    if (/error|exception|failed|success["']?\s*:\s*["']?false/i.test(text)) {
-      throw httpError(400, `${label} returned an error response`, { responseBody: text });
-    }
-  }
-
-  return { buffer, contentType };
-}
-
-function ensureMelcoSuccess(body) {
-  if (body?.success === false || body?.success === "false") {
-    throw httpError(400, "Melco ha restituito un errore", {
-      errorCode: body.error_code,
-      errorMessage: body.error_message,
-      responseBody: JSON.stringify(body),
+  if (isTextLikeContent(contentType)) {
+    throw httpError(502, `${label} ha restituito testo invece di un file binario`, {
+      responseBody: buffer.toString("utf8"),
     });
   }
+
+  return { buffer, contentType, contentDisposition, xFilename };
 }
 
-function result({ files, runFiles, designInfo, requestInfo }) {
+function postAutoDigitize(input, path, dimensions, auth, extraParams = {}) {
+  const form = new FormData();
+  const bytes = Buffer.from(input.base64, "base64");
+  const fileName = sanitizeFileName(input.name || "design.png");
+  form.append("image_file", new Blob([bytes], { type: input.mimeType || "application/octet-stream" }), fileName);
+
+  return fetch(apiUrl(path, { ...dimensions.query, ...extraParams }), {
+    method: "POST",
+    headers: authHeaders(auth),
+    body: form,
+  });
+}
+
+async function prepareMelcoSource(input, melcoOptions, runDir, context = {}) {
+  const originalBuffer = Buffer.from(input.base64, "base64");
+  const originalInputName = basename(String(input.name || "design.png"));
+  const originalName = sanitizeFileName(originalInputName);
+  const originalMimeType = input.mimeType || inferMimeType(originalName);
+  const originalMetadata = await readImageMetadata(originalBuffer, "Melco source image");
+  const maxSourceSidePx = maxSourceSidePxOption(melcoOptions);
+  const original = sourceSummary({
+    name: originalName,
+    mimeType: originalMimeType,
+    buffer: originalBuffer,
+    metadata: originalMetadata,
+  });
+
+  const originalExtension = extensionFromMimeOrName(originalMimeType, originalName);
+
+  let sentBuffer = originalBuffer;
+  let sentName = originalName;
+  let sentMimeType = originalMimeType;
+  let sentMetadata = originalMetadata;
+  let sentFileName = `melco-source-sent.${originalExtension}`;
+  let resized = false;
+  let originalArchive = null;
+  let sampleReplacement = null;
+
+  const longestSide = Math.max(originalMetadata.width ?? 0, originalMetadata.height ?? 0);
+  if (maxSourceSidePx && longestSide > maxSourceSidePx) {
+    const output = resizedOutputFormat(originalMimeType, originalMetadata);
+    const pipeline = sharp(originalBuffer, { failOn: "none", limitInputPixels: false })
+      .rotate()
+      .resize({
+        width: maxSourceSidePx,
+        height: maxSourceSidePx,
+        fit: "inside",
+        withoutEnlargement: true,
+      });
+
+    sentBuffer =
+      output.format === "jpeg"
+        ? await pipeline.jpeg({ quality: 90, mozjpeg: true }).toBuffer()
+        : await pipeline.png({ compressionLevel: 9 }).toBuffer();
+    sentMetadata = await readImageMetadata(sentBuffer, "Melco resized source image");
+    sentMimeType = output.mimeType;
+    sentFileName = `melco-source-sent.${output.extension}`;
+    sentName = sentFileName;
+    resized = true;
+    const archiveResult = archiveOriginalSource({
+      context,
+      originalInputName,
+      originalBuffer,
+      sentBuffer,
+      sentMimeType,
+    });
+    originalArchive = archiveResult.originalArchive;
+    sampleReplacement = archiveResult.sampleReplacement;
+  }
+
+  writeFileSync(join(runDir, sentFileName), sentBuffer);
+
+  const sent = sourceSummary({
+    name: sentName,
+    mimeType: sentMimeType,
+    buffer: sentBuffer,
+    metadata: sentMetadata,
+  });
+  const preprocessing = {
+    maxSourceSidePx,
+    resized,
+    longestSideBefore: longestSide || undefined,
+    longestSideAfter: Math.max(sent.width ?? 0, sent.height ?? 0) || undefined,
+    originalArchive,
+    sampleReplacement,
+  };
+  const manifest = {
+    original,
+    sent,
+    preprocessing,
+  };
+  writeFileSync(join(runDir, "melco-source.json"), JSON.stringify(manifest, null, 2), "utf8");
+
   return {
-    provider: "melco",
-    requestXml: JSON.stringify(requestInfo, null, 2),
-    files,
-    designInfo,
-    runFiles,
+    input: {
+      name: sentName,
+      mimeType: sentMimeType,
+      base64: sentBuffer.toString("base64"),
+    },
+    original,
+    sent,
+    preprocessing,
+    runFiles: [
+      { name: sentFileName, kind: "source-sent" },
+      { name: "melco-source.json", kind: "source-info" },
+    ],
   };
 }
 
-function missingConfiguration(values = {}) {
-  const username = values.username ?? process.env.MELCO_FUSION_USERNAME;
-  const token = values.token ?? process.env.MELCO_FUSION_TOKEN;
-  const authHeader = values.authHeader ?? process.env.MELCO_FUSION_AUTH_HEADER;
-  return [
-    ["MELCO_FUSION_USERNAME", username],
-    ["MELCO_FUSION_AUTH_HEADER", authHeader],
-    ["MELCO_FUSION_TOKEN or options.melco.token", token],
-  ]
-    .filter(([, value]) => !normalizeOptionalText(value))
-    .map(([key]) => key);
+function archiveOriginalSource({ context, originalInputName, originalBuffer, sentBuffer, sentMimeType }) {
+  const sourceOriginalsDir = context.sourceOriginalsDir;
+  if (!sourceOriginalsDir) {
+    return {
+      originalArchive: { stored: false, reason: "sourceOriginalsDir not configured" },
+      sampleReplacement: { replaced: false, reason: "sourceOriginalsDir not configured" },
+    };
+  }
+
+  const samplePath = samplePathForName(context.samplesDir, originalInputName);
+  if (samplePath && existsSync(samplePath)) {
+    const sampleBuffer = readFileSync(samplePath);
+    if (sampleBuffer.equals(originalBuffer)) {
+      const archiveDir = join(sourceOriginalsDir, "samples");
+      mkdirSync(archiveDir, { recursive: true });
+      const archivePath = uniquePath(archiveDir, originalInputName);
+      renameSync(samplePath, archivePath);
+
+      const replacementPath = replacementSamplePath(samplePath, sentMimeType);
+      writeFileSync(replacementPath, sentBuffer);
+
+      return {
+        originalArchive: {
+          stored: true,
+          kind: "sample",
+          path: archivePath,
+        },
+        sampleReplacement: {
+          replaced: true,
+          path: replacementPath,
+        },
+      };
+    }
+  }
+
+  const archiveDir = join(sourceOriginalsDir, "uploads");
+  mkdirSync(archiveDir, { recursive: true });
+  const archivePath = uniquePath(archiveDir, originalInputName);
+  writeFileSync(archivePath, originalBuffer);
+
+  return {
+    originalArchive: {
+      stored: true,
+      kind: "upload",
+      path: archivePath,
+    },
+    sampleReplacement: {
+      replaced: false,
+      reason: samplePath ? "uploaded bytes did not match sample file" : "not a sample library image",
+    },
+  };
+}
+
+function samplePathForName(samplesDir, name) {
+  if (!samplesDir) return null;
+  return resolve(samplesDir, basename(String(name || "")));
+}
+
+function replacementSamplePath(samplePath, sentMimeType) {
+  const currentExtension = extname(samplePath).replace(/^\./, "").toLowerCase();
+  const sentExtension = extensionFromMimeOrName(sentMimeType, `source.${currentExtension || "png"}`);
+  if (extensionsCompatible(currentExtension, sentExtension)) return samplePath;
+
+  const parsed = parse(samplePath);
+  return join(parsed.dir, `${parsed.name}.${sentExtension}`);
+}
+
+function extensionsCompatible(currentExtension, sentExtension) {
+  if (currentExtension === sentExtension) return true;
+  return currentExtension === "jpeg" && sentExtension === "jpg";
+}
+
+function uniquePath(dir, originalName) {
+  const parsed = parse(sanitizeFileName(basename(String(originalName || "source"))));
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const extension = parsed.ext || ".bin";
+  const base = parsed.name || "source";
+  let candidate = join(dir, `${stamp}-${base}${extension}`);
+  let index = 1;
+  while (existsSync(candidate)) {
+    candidate = join(dir, `${stamp}-${base}-${index}${extension}`);
+    index += 1;
+  }
+  return candidate;
+}
+
+async function readImageMetadata(buffer, label) {
+  try {
+    return await sharp(buffer, { failOn: "none", limitInputPixels: false }).metadata();
+  } catch (error) {
+    throw httpError(400, `${label} non leggibile: ${error.message}`);
+  }
+}
+
+function sourceSummary({ name, mimeType, buffer, metadata }) {
+  return {
+    name,
+    mimeType,
+    bytes: buffer.length,
+    width: metadata.width,
+    height: metadata.height,
+    format: metadata.format,
+    hasAlpha: metadata.hasAlpha,
+  };
+}
+
+function maxSourceSidePxOption(melcoOptions) {
+  const value = melcoOptions.maxSourceSidePx ?? process.env.MELCO_MAX_SOURCE_SIDE_PX;
+  if (value === "" || value === undefined || value === null) return undefined;
+  const number = Number(value);
+  if (!Number.isInteger(number) || number < 0) {
+    throw httpError(400, "Melco max source side px non valido");
+  }
+  return number === 0 ? undefined : number;
+}
+
+function resizedOutputFormat(mimeType, metadata) {
+  const lower = String(mimeType || "").toLowerCase();
+  if ((lower.includes("jpeg") || lower.includes("jpg")) && !metadata.hasAlpha) {
+    return { format: "jpeg", extension: "jpg", mimeType: "image/jpeg" };
+  }
+  return { format: "png", extension: "png", mimeType: "image/png" };
+}
+
+function extensionFromMimeOrName(mimeType, fileName) {
+  const lowerName = String(fileName || "").toLowerCase();
+  const extension = lowerName.match(/\.([a-z0-9]+)$/)?.[1];
+  if (extension) return extension === "jpeg" ? "jpg" : extension;
+
+  const lowerMime = String(mimeType || "").toLowerCase();
+  if (lowerMime.includes("jpeg") || lowerMime.includes("jpg")) return "jpg";
+  if (lowerMime.includes("png")) return "png";
+  if (lowerMime.includes("gif")) return "gif";
+  if (lowerMime.includes("tiff")) return "tif";
+  return "bin";
+}
+
+function melcoDimensionParams(options, melcoOptions) {
+  if (melcoOptions.useDefaultSize) {
+    return { widthMm: undefined, heightMm: undefined, newWidth: undefined, newHeight: undefined, query: {} };
+  }
+
+  const widthMm = optionalPositiveNumber(options.widthMm, "Width mm");
+  const heightMm = optionalPositiveNumber(options.heightMm, "Height mm");
+  const newWidth = widthMm ? Math.round(widthMm * 10) : undefined;
+  const newHeight = heightMm ? Math.round(heightMm * 10) : undefined;
+  const query = {
+    ...(newWidth ? { new_width: String(newWidth) } : {}),
+    ...(newHeight ? { new_height: String(newHeight) } : {}),
+  };
+  return { widthMm, heightMm, newWidth, newHeight, query };
+}
+
+function authHeaders(auth) {
+  const headers = {};
+  if (auth.apiKey) headers["x-api-key"] = auth.apiKey;
+  if (auth.authorization) headers.Authorization = auth.authorization;
+  return headers;
+}
+
+function apiUrl(path, params = {}) {
+  const url = new URL(`${baseUrl()}${path}`);
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, value);
+  }
+  return url;
+}
+
+function missingConfiguration() {
+  const apiKey = normalizeOptionalText(process.env.MELCO_CLOUD_API_KEY);
+  const authHeader = normalizeOptionalText(process.env.MELCO_CLOUD_AUTH_HEADER);
+  const authToken = normalizeOptionalText(process.env.MELCO_CLOUD_AUTH_TOKEN);
+  return apiKey || authHeader || authToken ? [] : ["MELCO_CLOUD_API_KEY or MELCO_CLOUD_AUTH_HEADER/MELCO_CLOUD_AUTH_TOKEN"];
 }
 
 function enumParam(value, allowed, fallback, label) {
@@ -295,45 +506,21 @@ function enumParam(value, allowed, fallback, label) {
   return normalized;
 }
 
-function positiveIntegerOrDefault(value, fallback, label) {
-  const number = value === "" || value === undefined || value === null ? fallback : Number(value);
-  if (!Number.isInteger(number) || number <= 0) {
+function optionalPositiveNumber(value, label) {
+  if (value === "" || value === undefined || value === null) return undefined;
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) {
     throw httpError(400, `${label} non valido`);
   }
   return number;
-}
-
-function optionalNonNegativeInteger(value, label) {
-  if (value === "" || value === undefined || value === null) return undefined;
-  const number = Number(value);
-  if (!Number.isInteger(number) || number < 0) {
-    throw httpError(400, `${label} non valido`);
-  }
-  return number;
-}
-
-function optionalRotation(value) {
-  if (value === "" || value === undefined || value === null) return undefined;
-  const number = Number(value);
-  if (!Number.isInteger(number) || number < 1 || number > 360) {
-    throw httpError(400, "Melco rotation non valida");
-  }
-  return number;
-}
-
-function requireFulfillmentId(value, mode) {
-  if (!value) {
-    throw httpError(400, `Melco ${mode} richiede options.melco.fulfillmentId`);
-  }
-  return value;
-}
-
-function boolParam(value) {
-  return value ? "true" : "false";
 }
 
 function baseUrl() {
-  return (process.env.MELCO_FUSION_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/+$/, "");
+  return (process.env.MELCO_CLOUD_API_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/+$/, "");
+}
+
+function normalizeAuthorizationToken(value) {
+  return /^(melco|bearer)\s+/i.test(value) ? value : `melco ${value}`;
 }
 
 function normalizeOptionalText(value) {
@@ -341,20 +528,38 @@ function normalizeOptionalText(value) {
   return String(value).trim();
 }
 
-function redactToken(value) {
-  const token = String(value);
-  if (token.length <= 8) return "********";
-  return `${token.slice(0, 4)}...${token.slice(-4)}`;
-}
-
 function sanitizeFileName(name) {
   return String(name).replace(/[^0-9A-Za-z._ -]/g, "_");
+}
+
+function fileNameFromResponse(response, fallback) {
+  return sanitizeFileName(response.xFilename || contentDispositionFileName(response.contentDisposition) || fallback);
+}
+
+function contentDispositionFileName(value) {
+  const encoded = value.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+  if (encoded) return decodeURIComponent(encoded.replace(/"/g, ""));
+
+  const plain = value.match(/filename="?([^";]+)"?/i)?.[1];
+  return plain || "";
+}
+
+function isTextLikeContent(contentType) {
+  return /json|xml|text|html/i.test(contentType);
+}
+
+function normalizeMimeType(contentType, fileName) {
+  const lowerType = String(contentType || "").toLowerCase();
+  if (lowerType.includes("png")) return "image/png";
+  if (lowerType.includes("jpeg") || lowerType.includes("jpg")) return "image/jpeg";
+  if (lowerType.includes("zip")) return "application/zip";
+  return inferMimeType(fileName);
 }
 
 function inferMimeType(fileName) {
   const lower = fileName.toLowerCase();
   if (lower.endsWith(".png")) return "image/png";
-  if (lower.endsWith(".svg")) return "image/svg+xml";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
   if (lower.endsWith(".zip")) return "application/zip";
   return "application/octet-stream";
 }

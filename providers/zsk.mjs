@@ -1,16 +1,38 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const SUPPORTED_INPUT_FORMATS = new Set(["dst", "tc", "z00", "tbf"]);
-const SUPPORTED_DESIGN_FORMATS = new Set(["dst", "tc", "z00", "tbf"]);
+const BITMAP_INPUT_FORMATS = new Set(["png", "jpg", "jpeg", "bmp"]);
+const ACE_DESIGN_FORMATS = new Set(["z00", "tc", "dst"]);
 const DEFAULT_ENDPOINT_PATH = "/StitchJob";
 const DEFAULT_TRUEVIEW = {
-  Strichdicke: "300",
+  Strichdicke: "400",
   Helligkeit: "100",
   BeleuchtungEin: "1",
   BeleuchtungWinkel: "90",
   AusblendenAktiv: "1",
   AusblendenAb: "127",
+};
+const DEFAULT_OPTIMIZE = {
+  Resolution: "0",
+  ImageType: "0",
+  Tolerance: "150",
+  RemoveArea: "60",
+  MaxColors: "24",
+};
+const DEFAULT_VECTOR = {
+  Tolerance: "20",
+  Smoothing: "50",
+  DetermineBackgroundColor: "1",
+  BackgroundColor: "255,255,255",
+  BackgroundFill: "1",
+};
+const DEFAULT_PUNCH = {
+  LineWidth: "10",
+  SatinStitchWidth: "70",
+  Overlap: "2",
+  MinimumAreaSize: "5",
+  MinimumHoleSize: "1",
+  MinimumLineLength: "50",
 };
 
 export const zskProvider = {
@@ -18,267 +40,264 @@ export const zskProvider = {
   describe() {
     return {
       id: "zsk",
-      name: "ZSK Web API",
+      name: "ZSK ACE",
       status: isConfigured() ? "ready" : "unavailable",
       configured: isConfigured(),
       modes: ["trueview", "design"],
       missing: missingConfig(),
       reason: isConfigured()
         ? null
-        : "Non disponibile: servono URL endpoint ZSK Web API e API key commerciali.",
+        : "Non disponibile: servono endpoint ZSK StitchJob, WebApiLicense e ACEToken ACE.",
     };
   },
   async convert(input, options, runDir) {
     mkdirSync(runDir, { recursive: true });
 
     const zskOptions = options.zsk ?? {};
+    const aceOptions = zskOptions.ace ?? zskOptions;
     const mode = options.mode === "design" ? "design" : "trueview";
-    const designFormat = normalizeDesignFormat(options.designFormat ?? zskOptions.designFormat ?? "dst");
-    const extension = getExtension(input.name);
-    const textOnly = Boolean(zskOptions.textOnly);
+    const designFormat = normalizeDesignFormat(options.designFormat ?? zskOptions.designFormat ?? "z00");
+    const pictureType = pictureTypeForInput(input);
+    const source = sourceInfo(input);
 
-    if (!textOnly && !SUPPORTED_INPUT_FORMATS.has(extension)) {
+    if (!pictureType) {
       writeFileSync(
-        join(runDir, "zsk-request.json"),
+        join(runDir, "zsk-ace-request.json"),
         JSON.stringify(
           {
             provider: "zsk",
+            service: "ace",
             skipped: true,
-            reason:
-              "ZSK Web API public docs describe text/monogram generation and existing embroidery file composition; bitmap auto-digitizing from PNG/JPG is not documented.",
-            source: sourceInfo(input),
+            reason: "ZSK ACE supports bitmap input only: PNG, JPG or BMP.",
+            source,
           },
           null,
           2
         ),
         "utf8"
       );
-      throw httpError(400, `Formato input non supportato da ZSK Web API pubblica: .${extension || "unknown"}`);
-    }
-
-    const embroideryType = textOnly ? undefined : normalizeEmbroideryType(extension);
-    const requestPayload = buildRequestPayload({
-      input,
-      mode,
-      designFormat,
-      embroideryType,
-      textOnly,
-      options,
-      zskOptions,
-    });
-
-    const requestInfo = {
-      provider: "zsk",
-      mode,
-      endpoint: configuredEndpoint(),
-      auth: authDebugInfo(),
-      requestPayload,
-      source: sourceInfo(input),
-    };
-    writeFileSync(join(runDir, "zsk-request.json"), JSON.stringify(requestInfo, null, 2), "utf8");
-
-    if (!isConfigured()) {
-      throw httpError(400, "ZSK Web API non configurata: imposta ZSK_WEB_API_BASE_URL e ZSK_WEB_API_KEY.");
-    }
-
-    const response = await fetch(configuredEndpoint(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        [authHeaderName()]: process.env.ZSK_WEB_API_KEY,
-      },
-      body: JSON.stringify(requestPayload),
-    });
-    const responseText = await response.text();
-    writeFileSync(join(runDir, "zsk-response.json"), responseText, "utf8");
-
-    if (!response.ok) {
-      throw httpError(response.status, `ZSK Web API HTTP ${response.status}`, { responseBody: responseText });
-    }
-
-    const responseJson = parseResponseJson(responseText);
-    if (responseJson.Success === false) {
-      throw httpError(400, "ZSK Web API ha restituito Success=false", { responseBody: responseText });
-    }
-
-    const outputBase64 = responseJson.RequestData;
-    if (!outputBase64 || typeof outputBase64 !== "string") {
-      throw httpError(400, "ZSK Web API response senza RequestData base64", { responseBody: responseText });
+      throw httpError(400, `Formato input non supportato da ZSK ACE: .${getExtension(input.name) || "unknown"}`);
     }
 
     const files = [];
-    const runFiles = [
-      { name: "zsk-request.json", kind: "request" },
-      { name: "zsk-response.json", kind: "response" },
-    ];
-    const outputName = mode === "design" ? `zsk-design.${fileExtensionForDesignFormat(designFormat)}` : "zsk-preview.png";
-    const outputKind = mode === "design" ? "design" : "preview";
-    const outputBuffer = Buffer.from(outputBase64, "base64");
+    const runFiles = [];
+    const requestSummaries = [];
+    let designInfo = null;
 
-    writeFileSync(join(runDir, outputName), outputBuffer);
-    files.push({
-      name: outputName,
-      mimeType: inferMimeType(outputName),
-      base64: outputBase64,
+    const preview = await postStitchJob({
+      label: "ZSK ACE preview",
+      payload: buildAcePayload({
+        requestType: "CreatePNG",
+        input,
+        pictureType,
+        aceOptions,
+        includeTrueView: true,
+      }),
+      runDir,
+      requestFileName: "zsk-ace-preview-request.json",
+      responseFileName: "zsk-ace-preview-response.json",
+      source,
     });
-    runFiles.push({ name: outputName, kind: outputKind });
 
-    if (responseJson.Info) {
-      writeFileSync(join(runDir, "zsk-design-info.json"), JSON.stringify(responseJson.Info, null, 2), "utf8");
-      runFiles.push({ name: "zsk-design-info.json", kind: "metadata" });
+    requestSummaries.push(preview.summary);
+    runFiles.push(
+      { name: "zsk-ace-preview-request.json", kind: "request" },
+      { name: "zsk-ace-preview-response.json", kind: "response" }
+    );
+    writeOutputFile({
+      runDir,
+      name: "zsk-ace-preview.png",
+      mimeType: "image/png",
+      base64: preview.json.RequestData,
+      kind: "preview",
+      files,
+      runFiles,
+    });
+    designInfo = normalizeDesignInfo(preview.json.Info);
+
+    if (mode === "design") {
+      const design = await postStitchJob({
+        label: "ZSK ACE design",
+        payload: buildAcePayload({
+          requestType: "CreateTC",
+          input,
+          pictureType,
+          aceOptions,
+          includeTrueView: false,
+        }),
+        runDir,
+        requestFileName: "zsk-ace-design-request.json",
+        responseFileName: "zsk-ace-design-response.json",
+        source,
+      });
+
+      requestSummaries.push(design.summary);
+      runFiles.push(
+        { name: "zsk-ace-design-request.json", kind: "request" },
+        { name: "zsk-ace-design-response.json", kind: "response" }
+      );
+      designInfo = normalizeDesignInfo(design.json.Info) ?? designInfo;
+
+      if (designFormat === "dst") {
+        const dst = await postStitchJob({
+          label: "ZSK Web API DST conversion",
+          payload: {
+            RequestType: "CreateDST",
+            EmbroideryType: "TC",
+            EmbroideryBase64: design.json.RequestData,
+            ServerVersion: 3,
+            WebApiLicense: licenseValue(),
+          },
+          runDir,
+          requestFileName: "zsk-dst-conversion-request.json",
+          responseFileName: "zsk-dst-conversion-response.json",
+          source,
+        });
+
+        requestSummaries.push(dst.summary);
+        runFiles.push(
+          { name: "zsk-dst-conversion-request.json", kind: "request" },
+          { name: "zsk-dst-conversion-response.json", kind: "response" }
+        );
+        writeOutputFile({
+          runDir,
+          name: "zsk-ace-design.dst",
+          mimeType: "application/octet-stream",
+          base64: dst.json.RequestData,
+          kind: "design",
+          files,
+          runFiles,
+        });
+        designInfo = normalizeDesignInfo(dst.json.Info) ?? designInfo;
+      } else {
+        writeOutputFile({
+          runDir,
+          name: "zsk-ace-design.z00",
+          mimeType: "application/octet-stream",
+          base64: design.json.RequestData,
+          kind: "design",
+          files,
+          runFiles,
+        });
+      }
     }
 
     return {
       provider: "zsk",
-      requestXml: JSON.stringify(requestInfo, null, 2),
-      responseXml: responseText,
+      requestXml: JSON.stringify({ provider: "zsk", service: "ace", requests: requestSummaries }, null, 2),
       files,
-      designInfo: responseJson.Info ?? null,
+      designInfo,
       runFiles,
     };
   },
 };
 
-function buildRequestPayload({ input, mode, designFormat, embroideryType, textOnly, options, zskOptions }) {
-  const payload = {
-    RequestType: requestTypeForMode(mode, designFormat),
-    Monograms: parseMonograms(zskOptions.monograms, options),
+async function postStitchJob({ label, payload, runDir, requestFileName, responseFileName, source }) {
+  const requestInfo = {
+    provider: "zsk",
+    endpoint: configuredEndpoint(),
+    auth: authDebugInfo(),
+    requestPayload: summarizePayload(payload),
+    source,
   };
+  writeFileSync(join(runDir, requestFileName), JSON.stringify(requestInfo, null, 2), "utf8");
 
-  if (!textOnly) {
-    payload.EmbroideryType = embroideryType;
-    payload.EmbroideryBase64 = input.base64;
+  const summary = requestInfo;
+
+  if (!isConfigured()) {
+    throw httpError(400, "ZSK ACE non configurata: imposta ZSK_WEB_API_BASE_URL e ZSK_WEB_API_KEY.");
   }
 
-  const embroiderySize = buildEmbroiderySize(options, zskOptions);
-  if (embroiderySize) payload.EmbroiderySize = embroiderySize;
-
-  const designOffset = buildDesignOffset(zskOptions);
-  if (designOffset) payload.DesignOffset = designOffset;
-
-  const needle = parseNeedleDefinitions(zskOptions.needle);
-  if (needle.length) payload.Needle = needle;
-
-  const seqAssignmentJson = normalizeOptionalText(zskOptions.seqAssignmentJson);
-  if (seqAssignmentJson) payload.SeqAssignmentJson = seqAssignmentJson;
-
-  if (mode === "trueview") {
-    payload.TrueView = buildTrueView(zskOptions.trueView);
-    payload.PngResolution = positiveIntegerOrDefault(zskOptions.pngResolution, 254, "PngResolution");
-  }
-
-  return payload;
-}
-
-function requestTypeForMode(mode, designFormat) {
-  if (mode === "trueview") return "CreatePNG";
-  if (designFormat === "dst") return "CreateDST";
-  if (designFormat === "tc" || designFormat === "z00") return "CreateTC";
-  if (designFormat === "tbf") return "CreateTBF";
-  throw httpError(400, `Formato ZSK non supportato: ${designFormat}`);
-}
-
-function parseMonograms(value, options) {
-  if (Array.isArray(value) && value.length) {
-    return value.map(normalizeMonogram);
-  }
-
-  const text = normalizeOptionalText(options.text);
-  if (!text) return [];
-
-  return [
-    normalizeMonogram({
-      Text: text.split(/\r?\n/).filter(Boolean),
-      FontFamily: options.fontFamily ?? "Arial",
-      FontSizeMM: options.fontSizeMm ?? 10,
-      UsedNeedle: 1,
-      XposMM: 0,
-      YposMM: 0,
-      HorizontalAlignment: 0,
-      TextStitchParameter: "Premium",
-      MonogramStyle: 0,
-    }),
-  ];
-}
-
-function normalizeMonogram(value) {
-  if (!value || typeof value !== "object") {
-    throw httpError(400, "Monogramma ZSK non valido");
-  }
-
-  const text = Array.isArray(value.Text) ? value.Text : [value.Text ?? ""];
-  const monogram = {
-    Text: text.map((line) => String(line)).filter(Boolean),
-    FontFamily: normalizeOptionalText(value.FontFamily) || "Arial",
-    FontSizeMM: positiveNumberOrDefault(value.FontSizeMM, 10, "FontSizeMM"),
-    UsedNeedle: positiveIntegerOrDefault(value.UsedNeedle, 1, "UsedNeedle"),
-    XposMM: numberOrDefault(value.XposMM, 0, "XposMM"),
-    YposMM: numberOrDefault(value.YposMM, 0, "YposMM"),
-  };
-
-  assignOptionalNumber(monogram, "HorizontalAlignment", value.HorizontalAlignment, "HorizontalAlignment", true);
-  assignOptionalNumber(monogram, "TextBendProcent", value.TextBendProcent, "TextBendProcent", true);
-  assignOptionalNumber(monogram, "TextStyle", value.TextStyle, "TextStyle", true);
-  assignOptionalNumber(monogram, "RadiusMM", value.RadiusMM, "RadiusMM");
-  assignOptionalNumber(monogram, "MonogramStyle", value.MonogramStyle, "MonogramStyle", true);
-
-  const textStitchParameter = normalizeOptionalText(value.TextStitchParameter);
-  if (textStitchParameter) monogram.TextStitchParameter = textStitchParameter;
-
-  if (!monogram.Text.length) {
-    throw httpError(400, "Testo monogramma ZSK mancante");
-  }
-
-  return monogram;
-}
-
-function buildEmbroiderySize(options, zskOptions) {
-  const width = optionalPositiveNumber(zskOptions.widthMm ?? options.widthMm, "EmbroiderySize.Widthmm");
-  const height = optionalPositiveNumber(zskOptions.heightMm ?? options.heightMm, "EmbroiderySize.Heightmm");
-  if (!width && !height) return null;
-  if (!width || !height) {
-    throw httpError(400, "EmbroiderySize ZSK richiede sia widthMm sia heightMm");
-  }
-  return { Widthmm: width, Heightmm: height };
-}
-
-function buildDesignOffset(zskOptions) {
-  const offsetX = optionalNumber(zskOptions.offsetXmm, "DesignOffset.OffsetXmm");
-  const offsetY = optionalNumber(zskOptions.offsetYmm, "DesignOffset.OffsetYmm");
-  if (offsetX === undefined && offsetY === undefined) return null;
-  return { OffsetXmm: offsetX ?? 0, OffsetYmm: offsetY ?? 0 };
-}
-
-function buildTrueView(value) {
-  if (!value || typeof value !== "object") return DEFAULT_TRUEVIEW;
-  return {
-    Strichdicke: stringIntegerOrDefault(value.Strichdicke, DEFAULT_TRUEVIEW.Strichdicke, "Strichdicke"),
-    Helligkeit: stringIntegerOrDefault(value.Helligkeit, DEFAULT_TRUEVIEW.Helligkeit, "Helligkeit"),
-    BeleuchtungEin: stringIntegerOrDefault(value.BeleuchtungEin, DEFAULT_TRUEVIEW.BeleuchtungEin, "BeleuchtungEin"),
-    BeleuchtungWinkel: stringIntegerOrDefault(
-      value.BeleuchtungWinkel,
-      DEFAULT_TRUEVIEW.BeleuchtungWinkel,
-      "BeleuchtungWinkel"
-    ),
-    AusblendenAktiv: stringIntegerOrDefault(value.AusblendenAktiv, DEFAULT_TRUEVIEW.AusblendenAktiv, "AusblendenAktiv"),
-    AusblendenAb: stringIntegerOrDefault(value.AusblendenAb, DEFAULT_TRUEVIEW.AusblendenAb, "AusblendenAb"),
-  };
-}
-
-function parseNeedleDefinitions(value) {
-  if (!Array.isArray(value)) return [];
-  return value.map((needle, index) => {
-    if (!needle || typeof needle !== "object") {
-      throw httpError(400, `Needle ZSK non valida alla posizione ${index + 1}`);
-    }
-    return {
-      Red: colorChannel(needle.Red ?? needle.R, "Red"),
-      Green: colorChannel(needle.Green ?? needle.G, "Green"),
-      Blue: colorChannel(needle.Blue ?? needle.B, "Blue"),
-      Name: normalizeOptionalText(needle.Name ?? needle.ColorName) || `Needle ${index + 1}`,
-    };
+  const response = await fetch(configuredEndpoint(), {
+    method: "POST",
+    headers: requestHeaders(),
+    body: JSON.stringify(payload),
   });
+  const responseText = await response.text();
+  writeFileSync(join(runDir, responseFileName), responseText, "utf8");
+
+  if (!response.ok) {
+    throw httpError(response.status, `${label} HTTP ${response.status}`, { responseBody: responseText });
+  }
+
+  const json = parseResponseJson(responseText);
+  if (json.Success === false) {
+    throw httpError(400, `${label} returned Success=false`, { responseBody: responseText });
+  }
+
+  if (!json.RequestData || typeof json.RequestData !== "string") {
+    throw httpError(400, `${label} response senza RequestData base64`, { responseBody: responseText });
+  }
+
+  return { json, responseText, summary };
+}
+
+function buildAcePayload({ requestType, input, pictureType, aceOptions, includeTrueView }) {
+  return {
+    RequestType: requestType,
+    ...(includeTrueView ? { TrueView: buildTrueView(aceOptions.trueView), PngResolution: positiveIntegerOrDefault(aceOptions.pngResolution, 254, "PngResolution") } : {}),
+    Client: "ACE",
+    ACEParaBitmapOptimize: buildOptimize(aceOptions.optimize),
+    ACEParaBitmapToVector: buildVector(aceOptions.vector),
+    ACEParaBitmapToPunch: buildPunch(aceOptions.punch),
+    PictureType: pictureType,
+    PictureBase64: input.base64,
+    ServerVersion: 3,
+    WebApiLicense: licenseValue(),
+    ACEToken: aceTokenValue(),
+  };
+}
+
+function buildOptimize(value = {}) {
+  return {
+    Resolution: integerRangeOrDefault(value.resolution, DEFAULT_OPTIMIZE.Resolution, "Resolution", 0, 2000),
+    ImageType: integerRangeOrDefault(value.imageType, DEFAULT_OPTIMIZE.ImageType, "ImageType", 0, 3),
+    Tolerance: integerRangeOrDefault(value.tolerance, DEFAULT_OPTIMIZE.Tolerance, "Optimize Tolerance", 0, 300),
+    RemoveArea: integerRangeOrDefault(value.removeArea, DEFAULT_OPTIMIZE.RemoveArea, "RemoveArea", 0, 200),
+    MaxColors: integerRangeOrDefault(value.maxColors, DEFAULT_OPTIMIZE.MaxColors, "MaxColors", 1, 256),
+  };
+}
+
+function buildVector(value = {}) {
+  return {
+    Tolerance: integerRangeOrDefault(value.tolerance, DEFAULT_VECTOR.Tolerance, "Vector Tolerance", 0, 300),
+    Smoothing: integerRangeOrDefault(value.smoothing, DEFAULT_VECTOR.Smoothing, "Smoothing", 0, 200),
+    DetermineBackgroundColor: boolNumber(value.determineBackgroundColor, DEFAULT_VECTOR.DetermineBackgroundColor),
+    BackgroundColor: rgbStringOrDefault(value.backgroundColor, DEFAULT_VECTOR.BackgroundColor, "BackgroundColor"),
+    BackgroundFill: boolNumber(value.backgroundFill, DEFAULT_VECTOR.BackgroundFill),
+  };
+}
+
+function buildPunch(value = {}) {
+  const punch = {
+    LineWidth: integerRangeOrDefault(value.lineWidth, DEFAULT_PUNCH.LineWidth, "LineWidth", 1, 1000),
+    SatinStitchWidth: integerRangeOrDefault(value.satinStitchWidth, DEFAULT_PUNCH.SatinStitchWidth, "SatinStitchWidth", 1, 1000),
+    Overlap: integerRangeOrDefault(value.overlap, DEFAULT_PUNCH.Overlap, "Overlap", 0, 1000),
+    MinimumAreaSize: integerRangeOrDefault(value.minimumAreaSize, DEFAULT_PUNCH.MinimumAreaSize, "MinimumAreaSize", 1, 10000),
+    MinimumHoleSize: integerRangeOrDefault(value.minimumHoleSize, DEFAULT_PUNCH.MinimumHoleSize, "MinimumHoleSize", 1, 10000),
+    MinimumLineLength: integerRangeOrDefault(value.minimumLineLength, DEFAULT_PUNCH.MinimumLineLength, "MinimumLineLength", 1, 10000),
+  };
+
+  const threadCones = normalizeOptionalText(value.threadCones ?? process.env.ZSK_ACE_THREAD_CONES);
+  if (threadCones) punch.UseThreadCones = threadCones;
+  return punch;
+}
+
+function buildTrueView(value = {}) {
+  return {
+    Strichdicke: integerRangeOrDefault(value.Strichdicke ?? value.threadThickness, DEFAULT_TRUEVIEW.Strichdicke, "Strichdicke", 1, 2000),
+    Helligkeit: integerRangeOrDefault(value.Helligkeit ?? value.brightness, DEFAULT_TRUEVIEW.Helligkeit, "Helligkeit", 0, 300),
+    BeleuchtungEin: boolNumber(value.BeleuchtungEin ?? value.lightingEnabled, DEFAULT_TRUEVIEW.BeleuchtungEin),
+    BeleuchtungWinkel: integerRangeOrDefault(value.BeleuchtungWinkel ?? value.lightingAngle, DEFAULT_TRUEVIEW.BeleuchtungWinkel, "BeleuchtungWinkel", 0, 360),
+    AusblendenAktiv: boolNumber(value.AusblendenAktiv ?? value.hideLongStitches, DEFAULT_TRUEVIEW.AusblendenAktiv),
+    AusblendenAb: integerRangeOrDefault(value.AusblendenAb ?? value.hideThreshold, DEFAULT_TRUEVIEW.AusblendenAb, "AusblendenAb", 0, 10000),
+  };
+}
+
+function writeOutputFile({ runDir, name, mimeType, base64, kind, files, runFiles }) {
+  writeFileSync(join(runDir, name), Buffer.from(base64, "base64"));
+  files.push({ name, mimeType, base64 });
+  runFiles.push({ name, kind });
 }
 
 function configuredEndpoint() {
@@ -290,7 +309,7 @@ function configuredEndpoint() {
 }
 
 function missingConfig() {
-  return ["ZSK_WEB_API_BASE_URL", "ZSK_WEB_API_KEY"].filter((key) => !process.env[key]);
+  return ["ZSK_WEB_API_BASE_URL", "ZSK_WEB_API_KEY", "ZSK_ACE_TOKEN"].filter((key) => !process.env[key]);
 }
 
 function isConfigured() {
@@ -301,33 +320,70 @@ function authHeaderName() {
   return normalizeOptionalText(process.env.ZSK_WEB_API_AUTH_HEADER) || "x-api-key";
 }
 
+function authHeaderValue() {
+  const scheme = normalizeOptionalText(process.env.ZSK_WEB_API_AUTH_SCHEME);
+  return scheme ? `${scheme} ${process.env.ZSK_WEB_API_KEY}` : process.env.ZSK_WEB_API_KEY;
+}
+
+function requestHeaders() {
+  const headers = {
+    "Content-Type": "text/plain; charset=utf-8",
+    Accept: "application/json",
+  };
+  const header = normalizeOptionalText(process.env.ZSK_WEB_API_AUTH_HEADER);
+  if (header) headers[header] = authHeaderValue();
+  return headers;
+}
+
 function authDebugInfo() {
   return {
-    header: authHeaderName(),
-    configured: Boolean(process.env.ZSK_WEB_API_KEY),
+    header: normalizeOptionalText(process.env.ZSK_WEB_API_AUTH_HEADER) || null,
+    scheme: normalizeOptionalText(process.env.ZSK_WEB_API_AUTH_SCHEME) || null,
+    webApiLicenseConfigured: Boolean(process.env.ZSK_WEB_API_KEY),
   };
 }
 
-function normalizeEmbroideryType(extension) {
-  if (extension === "z00") return "TC";
-  return extension.toUpperCase();
+function licenseValue() {
+  const value = normalizeOptionalText(process.env.ZSK_WEB_API_KEY);
+  if (!value) throw httpError(400, "ZSK WebApiLicense mancante: imposta ZSK_WEB_API_KEY.");
+  return value;
+}
+
+function aceTokenValue() {
+  const value = normalizeOptionalText(process.env.ZSK_ACE_TOKEN);
+  if (!value) throw httpError(400, "ZSK ACEToken mancante: imposta ZSK_ACE_TOKEN.");
+  return value;
+}
+
+function pictureTypeForInput(input) {
+  const extension = getExtension(input.name);
+  if (extension === "jpeg") return "JPG";
+  if (BITMAP_INPUT_FORMATS.has(extension)) return extension.toUpperCase();
+
+  const mimeType = normalizeOptionalText(input.mimeType).toLowerCase();
+  if (mimeType === "image/jpeg") return "JPG";
+  if (mimeType === "image/png") return "PNG";
+  if (mimeType === "image/bmp") return "BMP";
+  return null;
 }
 
 function normalizeDesignFormat(value) {
   const normalized = String(value).replace(/^\./, "").toLowerCase();
-  if (!SUPPORTED_DESIGN_FORMATS.has(normalized)) {
-    throw httpError(400, `Formato output ZSK non supportato: ${value}`);
+  if (!ACE_DESIGN_FORMATS.has(normalized)) {
+    throw httpError(400, `Formato output ZSK ACE non supportato: ${value}`);
   }
   return normalized;
 }
 
-function fileExtensionForDesignFormat(value) {
-  return value === "tc" ? "z00" : value;
-}
-
-function getExtension(fileName) {
-  const match = String(fileName).toLowerCase().match(/\.([a-z0-9]+)$/);
-  return match ? match[1] : "";
+function normalizeDesignInfo(info) {
+  if (!info || typeof info !== "object") return null;
+  return {
+    ...info,
+    stitches: info.numberOfStitches ?? info.num_stitches ?? info.stitches,
+    width: info.widthMm ?? info.width,
+    height: info.heightMm ?? info.height,
+    unit: "mm",
+  };
 }
 
 function sourceInfo(input) {
@@ -338,37 +394,51 @@ function sourceInfo(input) {
   };
 }
 
+function summarizePayload(payload) {
+  return JSON.parse(
+    JSON.stringify(payload, (key, value) => {
+      if (key === "PictureBase64" || key === "EmbroideryBase64") {
+        return `[base64 ${String(value ?? "").length} chars]`;
+      }
+      if (key === "WebApiLicense") {
+        return "[configured]";
+      }
+      if (key === "ACEToken") {
+        return "[configured]";
+      }
+      return value;
+    })
+  );
+}
+
 function parseResponseJson(text) {
   try {
     return JSON.parse(text);
   } catch {
-    throw httpError(400, "Risposta ZSK Web API non JSON", { responseBody: text });
+    throw httpError(400, "Risposta ZSK non JSON", { responseBody: text });
   }
 }
 
-function inferMimeType(fileName) {
-  return fileName.toLowerCase().endsWith(".png") ? "image/png" : "application/octet-stream";
+function getExtension(fileName) {
+  const match = String(fileName).toLowerCase().match(/\.([a-z0-9]+)$/);
+  return match ? match[1] : "";
 }
 
-function colorChannel(value, label) {
-  const number = Number(value);
-  if (!Number.isInteger(number) || number < 0 || number > 255) {
-    throw httpError(400, `${label} needle ZSK non valido`);
-  }
-  return number;
+function boolNumber(value, fallback = "0") {
+  if (value === "" || value === undefined || value === null) return String(fallback);
+  if (typeof value === "boolean") return value ? "1" : "0";
+  const text = String(value).trim().toLowerCase();
+  if (text === "1" || text === "true") return "1";
+  if (text === "0" || text === "false") return "0";
+  throw httpError(400, "Parametro booleano ZSK non valido");
 }
 
-function stringIntegerOrDefault(value, fallback, label) {
+function integerRangeOrDefault(value, fallback, label, min, max) {
   const number = value === "" || value === undefined || value === null ? Number(fallback) : Number(value);
-  if (!Number.isInteger(number)) {
+  if (!Number.isInteger(number) || number < min || number > max) {
     throw httpError(400, `${label} ZSK non valido`);
   }
   return String(number);
-}
-
-function assignOptionalNumber(target, key, value, label, allowZero = false) {
-  const number = optionalPositiveNumber(value, label, allowZero);
-  if (number !== undefined) target[key] = number;
 }
 
 function positiveIntegerOrDefault(value, fallback, label) {
@@ -379,39 +449,22 @@ function positiveIntegerOrDefault(value, fallback, label) {
   return number;
 }
 
-function positiveNumberOrDefault(value, fallback, label) {
-  const number = value === "" || value === undefined || value === null ? fallback : Number(value);
-  if (!Number.isFinite(number) || number <= 0) {
-    throw httpError(400, `${label} ZSK non valido`);
-  }
-  return number;
-}
+function rgbStringOrDefault(value, fallback, label) {
+  const text = normalizeOptionalText(value);
+  if (!text) return fallback;
 
-function numberOrDefault(value, fallback, label) {
-  const number = value === "" || value === undefined || value === null ? fallback : Number(value);
-  if (!Number.isFinite(number)) {
-    throw httpError(400, `${label} ZSK non valido`);
+  const hexMatch = text.match(/^#?([0-9a-fA-F]{6})$/);
+  if (hexMatch) {
+    const hex = hexMatch[1];
+    return `${parseInt(hex.slice(0, 2), 16)},${parseInt(hex.slice(2, 4), 16)},${parseInt(hex.slice(4, 6), 16)}`;
   }
-  return number;
-}
 
-function optionalPositiveNumber(value, label, allowZero = false) {
-  if (value === "" || value === undefined || value === null) return undefined;
-  const number = Number(value);
-  const isValid = Number.isFinite(number) && (allowZero ? number >= 0 : number > 0);
-  if (!isValid) {
-    throw httpError(400, `${label} ZSK non valido`);
+  const parts = text.split(",").map((part) => Number(part.trim()));
+  if (parts.length === 3 && parts.every((part) => Number.isInteger(part) && part >= 0 && part <= 255)) {
+    return parts.join(",");
   }
-  return number;
-}
 
-function optionalNumber(value, label) {
-  if (value === "" || value === undefined || value === null) return undefined;
-  const number = Number(value);
-  if (!Number.isFinite(number)) {
-    throw httpError(400, `${label} ZSK non valido`);
-  }
-  return number;
+  throw httpError(400, `${label} ZSK non valido`);
 }
 
 function normalizeOptionalText(value) {

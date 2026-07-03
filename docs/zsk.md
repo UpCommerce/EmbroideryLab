@@ -1,70 +1,105 @@
-# ZSK Provider Notes
+# ZSK ACE Provider Notes
 
 ## Public Sources
 
-- ZSK Web API request documentation: https://catalog.zsk.de/api/web-api/requests.html
-- `CreatePNG` TrueView preview example: https://catalog.zsk.de/api/web-api/createpng.html
-- `CreateDST` output example: https://catalog.zsk.de/api/web-api/createdst.html
-- response shape with `Success`, base64 `RequestData`, and `Info`: https://catalog.zsk.de/api/web-api/job_response_type.html
-- ZSK Web API product page: https://www.zsk.de/de/software/webapi.php
-- BasePac feature page: https://www.zsk.de/en/software/basepac/basepac-features.php
-- sock/personalization workflow page mentioning ZSK WebAPI + BasePac automation: https://www.zsk.de/en/anwendungen/sticken/socken-besticken.php
+- ZSK API sample portal: https://www.embroidery-api.com/
+- Automated Computed Embroidery: https://www.embroidery-api.com/api/ACE
+- ACE example request: https://www.embroidery-api.com/api/ACE/section/ExampleRequest
+- ACE optimize parameters: https://www.embroidery-api.com/api/ACE/section/ACEParaBitmapOptimize
+- ACE vector parameters: https://www.embroidery-api.com/api/ACE/section/ACEParaBitmapToVector
+- ACE punch parameters: https://www.embroidery-api.com/api/ACE/section/ACEParaBitmapToPunch
+- ZSK Web API response shape: https://www.embroidery-api.com/api/ZSKWebApi/section/JobResponseType
 
-## What The Public Docs Support
+## Why ACE
 
-ZSK documents a hosted REST/JSON Web API with one `StitchJob` endpoint controlled by `RequestType`.
+The previous ZSK PoC was based on the classic ZSK Web API flow, which is useful for text,
+monograms, preview rendering, and conversion of existing embroidery data. It did not solve
+the Lab's main use case because the public Web API snippets do not document bitmap
+auto-digitizing.
 
-Documented request types include:
+ACE is the relevant ZSK path for this project because the documentation explicitly describes
+creating embroidery data from image data and lists bitmap input formats:
 
-- `CreatePNG` for TrueView preview PNG.
-- `CreateTC` for ZSK TC / `.z00`.
-- `CreateTBF`.
-- `CreateDST`.
-- `GetEmbroideryInfo`.
-- `GetNeedleInfo`.
-- `GetNeedleSequence`.
-- `GetFontList`.
-- `GetFontSettings`.
+- BMP
+- PNG
+- JPG
 
-The docs show JSON bodies containing `Monograms`, optional `EmbroideryType`, base64 `EmbroideryBase64`, `Needle`, `TrueView`, `PngResolution`, `EmbroiderySize`, `DesignOffset`, and DST needle assignment JSON. The response is documented as JSON with `Success`, base64 `RequestData`, optional `Info`, and optional timing data.
+## Current Implementation
 
-## Unknowns / Commercial Gaps
+`providers/zsk.mjs` now treats bitmap input as an ACE job:
 
-- The public pages describe `POST StitchJob`, but do not expose a tenant-specific base URL in the snippets available here.
-- The product page says an API key is enough, but the exact auth header is not documented in the public snippets. The provider defaults to `x-api-key` and allows override through `ZSK_WEB_API_AUTH_HEADER`.
-- Bitmap auto-digitizing from arbitrary PNG/JPG input is not documented in the ZSK Web API pages reviewed. BasePac supports auto-digitizing from images, but the Web API docs shown publicly focus on text/monograms and composition with existing TC/DST/TBF embroidery data.
-- `CreateDST` documentation says the input format is TC and the output is DST. The provider therefore treats DST output from TC/Z00 input as the conservative path.
+- Preview mode sends `RequestType: "CreatePNG"` with `Client: "ACE"`.
+- Design mode first sends `CreatePNG` so the Lab still has a visual preview.
+- Design mode then sends `RequestType: "CreateTC"` to create TC/Z00 embroidery data.
+- If the requested output format is `DST`, the provider sends a follow-up classic Web API
+  request: `RequestType: "CreateDST"`, using the TC result from ACE as `EmbroideryBase64`.
 
-## Env Vars
+Each network call writes full request/response artifacts into the run directory:
 
-- `ZSK_WEB_API_BASE_URL`: tenant/API host, without trailing slash. Example placeholder: `https://customer.example-zsk-host`.
-- `ZSK_WEB_API_ENDPOINT`: optional path or full URL. Defaults to `/StitchJob`.
+- `zsk-ace-preview-request.json`
+- `zsk-ace-preview-response.json`
+- `zsk-ace-design-request.json`
+- `zsk-ace-design-response.json`
+- `zsk-dst-conversion-request.json`
+- `zsk-dst-conversion-response.json`
+
+Output files:
+
+- `zsk-ace-preview.png`
+- `zsk-ace-design.z00`
+- `zsk-ace-design.dst`
+
+## Required Manual Data
+
+ZSK ACE still requires commercial/tenant configuration. The Lab cannot test real calls until
+these are known:
+
+- `ZSK_WEB_API_BASE_URL`: tenant/API base URL, without trailing slash. The docs show this as
+  `https://ZSKAddress`.
+- `ZSK_WEB_API_ENDPOINT`: path or full URL. Defaults to `/StitchJob`.
 - `ZSK_WEB_API_KEY`: commercial API key.
-- `ZSK_WEB_API_AUTH_HEADER`: optional auth header name. Defaults to `x-api-key`.
+- `ZSK_WEB_API_AUTH_HEADER`: auth header name. Defaults to `x-api-key`.
+- `ZSK_WEB_API_AUTH_SCHEME`: optional prefix such as `Bearer`; leave empty when the header value
+  should be the raw key.
+- Active license/plan for ACE.
 
-## Provider Behavior
+Optional:
 
-- Always writes `zsk-request.json` into the run directory before any network call.
-- If env vars are missing, throws a clear configuration error without pretending conversion succeeded.
-- If the input is PNG/JPG or another bitmap, writes a skipped request/debug file and throws, because public docs do not confirm bitmap-to-stitch support.
-- If configured, posts JSON to the configured `StitchJob` endpoint and stores `zsk-response.json`.
-- For preview mode, builds `RequestType: "CreatePNG"` and expects PNG base64 in `RequestData`.
-- For design mode, builds `CreateDST`, `CreateTC`, or `CreateTBF` based on requested output format and expects base64 stitch data in `RequestData`.
+- `ZSK_ACE_THREAD_CONES`: default ACE `UseThreadCones` filename.
 
-## Recommended UI Options
+## Implemented UI Options
 
-- Mode: `trueview` / `design`.
-- Output format: `dst`, `z00`/`tc`, `tbf`.
-- Text lines: one or more text lines for `Monograms[].Text`.
-- Font family: default `Arial`.
-- Font size in mm: default `10`.
-- Needle number: default `1`.
-- X/Y position in mm.
-- Text stitch parameter: start with `Premium`, optionally `Dense` if confirmed by font settings.
-- Preview resolution: default `254` dpi.
-- TrueView controls: line thickness, brightness, lighting enabled, lighting angle, hide long stitches enabled, hide threshold.
-- Existing embroidery upload format: TC/Z00, DST, or TBF. Prefer TC/Z00 when requesting DST output.
+The UI exposes only options that are sent in the ACE request:
 
-## Integration Note
+### ACEParaBitmapOptimize
 
-`providers/zsk.mjs` exports `zskProvider`, but this worker intentionally did not edit `providers/index.mjs`. The main integration thread can import it and route `id === "zsk"` when ready.
+- `ImageType`: clipart/scanned image and highlight-black variants.
+- `Tolerance`: color grouping tolerance, 0-300.
+- `RemoveArea`: small region removal, 0-200.
+- `MaxColors`: maximum bitmap color reduction count.
+
+### ACEParaBitmapToVector
+
+- `Tolerance`: vector color grouping tolerance, 0-300.
+- `Smoothing`: curve smoothing, 0-200.
+- `DetermineBackgroundColor`: automatic outside background detection.
+- `BackgroundColor`: RGB or hex color sent to ACE.
+- `BackgroundFill`: whether background-colored internal regions are stitched.
+
+### ACEParaBitmapToPunch
+
+- `LineWidth`: 1/10 mm threshold for stitch lines.
+- `SatinStitchWidth`: 1/10 mm satin/fill threshold.
+- `Overlap`: 1/10 mm region overlap.
+- `MinimumAreaSize`: square mm.
+- `MinimumHoleSize`: square mm.
+- `MinimumLineLength`: 1/10 mm.
+- `UseThreadCones`: optional thread chart filename.
+
+## Open Questions For ZSK
+
+- Exact authentication header/value format.
+- Whether ACE supports direct `CreateDST` in the customer's environment. Public ACE docs mention
+  `CreatePNG` and `CreateTC`; the Lab currently converts TC to DST as a second request.
+- Whether `UseThreadCones` expects filenames with `.json` or display names without extension in
+  the target tenant. The parameter docs mention JSON filenames; one sample omits the extension.

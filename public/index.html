@@ -12,9 +12,13 @@
         <h1>Embroidery Lab</h1>
         <p id="provider-status">Provider</p>
       </div>
-      <button id="run-button" class="primary-button" type="button" disabled>
-        Run conversion
-      </button>
+      <div class="header-actions">
+        <button id="history-button" class="ghost-button" type="button">History</button>
+        <button id="compare-button" class="ghost-button" type="button">Compare</button>
+        <button id="run-button" class="primary-button" type="button" disabled>
+          Run conversion
+        </button>
+      </div>
     </header>
 
     <main class="workspace">
@@ -25,9 +29,9 @@
         </div>
 
         <label id="drop-zone" class="drop-zone" for="file-input">
-          <input id="file-input" type="file" accept="image/png,image/jpeg,image/bmp,image/gif,image/tiff" />
+          <input id="file-input" type="file" accept="image/png,image/jpeg,image/bmp,image/gif,image/tiff,application/pdf,application/postscript,.pdf,.eps" />
           <span id="drop-title">Choose image</span>
-          <span id="file-name">PNG, JPG, BMP, GIF, TIF</span>
+          <span id="file-name">PNG, JPG, BMP, GIF, TIF, PDF, EPS</span>
         </label>
 
         <details class="sample-library" open>
@@ -42,11 +46,22 @@
 
         <div class="field-row">
           <label>
-            <span class="label-with-tip">Width mm <span class="tip" tabindex="0" data-tip="Target physical embroidery width. For PulseID it is sent as FinalWidth after converting mm to embroidery points; it changes scale and stitch generation, not just preview pixels.">?</span></span>
+            <span class="label-with-tip">Max source side px <span class="tip" tabindex="0" data-tip="Before conversion, images larger than this longest side are resized on the server. 0 disables downscale. Originals are archived when resized.">?</span></span>
+            <input id="source-max-side" type="number" min="0" step="100" value="3000" />
+          </label>
+          <label>
+            <span class="label-with-tip">Min source side px <span class="tip" tabindex="0" data-tip="Before conversion, images smaller than this shortest side are upscaled on the server. Use 500 for providers that reject smaller images. 0 disables upscale.">?</span></span>
+            <input id="source-min-side" type="number" min="0" step="50" value="500" />
+          </label>
+        </div>
+
+        <div id="target-size-row" class="field-row">
+          <label>
+            <span class="label-with-tip">Target width mm <span class="tip" tabindex="0" data-tip="Sent only to providers that use a physical target size. Hidden when the selected provider ignores it.">?</span></span>
             <input id="width-mm" type="number" min="1" step="1" value="90" />
           </label>
           <label>
-            <span class="label-with-tip">Height mm <span class="tip" tabindex="0" data-tip="Target physical embroidery height. With proportional resize enabled, PulseID fits the design inside width and height while preserving aspect ratio.">?</span></span>
+            <span class="label-with-tip">Target height mm <span class="tip" tabindex="0" data-tip="Sent only to providers that use a physical target size. Hidden when the selected provider ignores it.">?</span></span>
             <input id="height-mm" type="number" min="1" step="1" value="45" />
           </label>
         </div>
@@ -68,7 +83,7 @@
           </div>
         </div>
 
-        <div class="control-block">
+        <div id="format-block" class="control-block">
           <label>
             <span class="label-with-tip">Format <span class="tip" tabindex="0" data-tip="Production file format for Design file mode. PulseID supports DST, PES, PXF, TCF, Z00 and PCF. TrueView mode only needs the preview PNG.">?</span></span>
             <select id="design-format">
@@ -83,17 +98,73 @@
 
         <div id="wilcom-options" class="provider-options" hidden>
           <div class="control-block">
+            <div class="field-label">Wilcom input</div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Input type <span class="tip" tabindex="0" data-tip="Auto chooses bitmapArt for raster files and vectorArt for PDF/EPS. Force Bitmap or Vector only when testing Wilcom endpoint behavior deliberately.">?</span></span>
+                <select id="wilcom-input-kind">
+                  <option value="auto">Auto</option>
+                  <option value="bitmap">Bitmap</option>
+                  <option value="vector">Vector</option>
+                </select>
+              </label>
+              <label class="toggle inline-toggle">
+                <input id="wilcom-use-source-dpi" type="checkbox" />
+                <span>Use source DPI <span class="tip" tabindex="0" data-tip="Omits target width/height. Wilcom then sizes the embroidery from the source file DPI, or 96 DPI when the source has no readable DPI.">?</span></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="control-block">
             <div class="field-label">Wilcom output</div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">DPI <span class="tip" tabindex="0" data-tip="Wilcom output DPI for the generated TrueView PNG. Wilcom caps this at 300 and uses 96 if missing or invalid.">?</span></span>
+                <input id="dpi" type="number" min="1" max="300" step="1" value="160" />
+              </label>
+              <label id="wilcom-design-version-block" hidden>
+                <span class="label-with-tip">EMB version <span class="tip" tabindex="0" data-tip="Optional Wilcom design_version. It is sent only for EMB output; stitch formats like DST cannot use design_version.">?</span></span>
+                <select id="wilcom-design-version">
+                  <option value="">Latest</option>
+                  <option value="Wilcom All-in-One Designs 27.0 (Digital Edition) (*.EMB)">2025 / 27.0</option>
+                  <option value="Wilcom All-in-One Designs 26.0 (Digital Edition) (*.EMB)">Digital Edition / 26.0</option>
+                  <option value="Wilcom All-in-One Designs e4.5 (*.EMB)">e4.5</option>
+                  <option value="Wilcom All-in-One Designs e4.2 (*.EMB)">e4.2</option>
+                  <option value="Wilcom All-in-One Designs e4.1 (*.EMB)">e4.1</option>
+                  <option value="Wilcom All-in-One Designs e4.0 (*.EMB)">e4.0</option>
+                  <option value="Wilcom All-in-One Designs e3.6 (*.EMB)">e3.6</option>
+                  <option value="Wilcom All-in-One Designs e3.5 (*.EMB)">e3.5</option>
+                  <option value="Wilcom All-in-One Designs e3 (*.EMB)">e3</option>
+                  <option value="Wilcom All-in-One Designs e2 (*.EMB)">e2</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="control-block">
+            <div class="field-label">Wilcom colors</div>
             <label>
-              <span class="label-with-tip">DPI <span class="tip" tabindex="0" data-tip="Wilcom render/output DPI. This affects generated preview density for Wilcom requests, not PulseID.">?</span></span>
-              <input id="dpi" type="number" min="72" max="300" step="1" value="160" />
+              <span class="label-with-tip">Color source <span class="tip" tabindex="0" data-tip="Palette sends nominated thread colors. Thread chart uploads a .tch file as thread_file. Default sends neither and lets Wilcom choose its default palette.">?</span></span>
+              <select id="wilcom-color-source">
+                <option value="palette">Palette</option>
+                <option value="threadChart">Thread chart</option>
+                <option value="default">Default palette</option>
+              </select>
             </label>
           </div>
 
           <div id="thread-palette-block" class="control-block">
-            <div class="field-label">Thread palette <span class="tip" tabindex="0" data-tip="Wilcom nominated thread colors. PulseID does not use this hex palette; PulseID color behavior belongs in its provider panel.">?</span></div>
+            <div class="field-label">Thread palette <span class="tip" tabindex="0" data-tip="Wilcom nominated thread colors. The Lab auto-fills them from the selected source image; edit each swatch, remove with x, or add with +.">?</span></div>
             <div id="swatches" class="swatches"></div>
-            <input id="threads" type="text" value="#0073cf,#ffffff,#ff5b00,#ff2ba6,#64c05a" />
+            <input id="threads" type="hidden" value="#0073cf,#ffffff,#ff5b00,#ff2ba6,#64c05a" />
+          </div>
+
+          <div id="wilcom-thread-chart-block" class="control-block" hidden>
+            <label>
+              <span class="label-with-tip">Thread chart .tch <span class="tip" tabindex="0" data-tip="Wilcom thread_file. The selected .tch is uploaded in the same XML files list and used for color matching.">?</span></span>
+              <input id="wilcom-thread-chart" type="file" accept=".tch" />
+            </label>
+            <span id="wilcom-thread-chart-name" class="run-id">No chart selected</span>
           </div>
 
           <div class="toggle-list">
@@ -105,6 +176,23 @@
         </div>
 
         <div id="pulse-options" class="provider-options" hidden>
+          <div class="control-block">
+            <div class="field-label">Pulse request</div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Run type <span class="tip" tabindex="0" data-tip="Full conversion calls GetInfo, renders the preview, and generates a design file in Design mode. Quick estimate calls GetInfo, renders a smaller preview, and skips production file generation. Both options send real PulseID API requests.">?</span></span>
+                <select id="pulse-run-type">
+                  <option value="full">Full conversion</option>
+                  <option value="quick">Quick estimate + preview</option>
+                </select>
+              </label>
+              <label>
+                <span class="label-with-tip">Timeout seconds <span class="tip" tabindex="0" data-tip="PulseID autodigitizing timeout sent as TimeoutSeconds. Quick estimate defaults to a shorter timeout; increase it for complex artwork.">?</span></span>
+                <input id="pulse-timeout-seconds" type="number" min="1" max="300" step="1" value="60" />
+              </label>
+            </div>
+          </div>
+
           <div class="control-block">
             <div class="field-label">Pulse digitizing</div>
             <div class="field-row">
@@ -123,6 +211,11 @@
                 <input id="pulse-thread-thickness" type="number" min="1" max="99" step="1" value="" placeholder="default" />
               </label>
             </div>
+          </div>
+
+          <div class="control-block option-task">
+            <div class="field-label">Option compare <span class="tip" tabindex="0" data-tip="Runs the current source image 5 times with PulseID, changing only Thread type. Every other Pulse option uses Lab defaults.">?</span></div>
+            <button id="pulse-thread-type-compare-button" class="ghost-button" type="button" disabled>Thread type x5</button>
           </div>
 
           <div class="toggle-list compact">
@@ -238,9 +331,126 @@
               </label>
               <label class="toggle">
                 <input id="pulse-use-image-dimensions" type="checkbox" />
-                <span>Use image dimensions <span class="tip" tabindex="0" data-tip="Lets PulseID include source image dimensions in final sizing. Usually off because the Lab controls size with Width/Height mm.">?</span></span>
+                <span>Use image dimensions <span class="tip" tabindex="0" data-tip="Lets PulseID size from the source image. When enabled, the Lab hides and omits Target width/height.">?</span></span>
               </label>
             </div>
+          </details>
+        </div>
+
+        <div id="melco-options" class="provider-options" hidden>
+          <div class="control-block">
+            <div class="field-label">Melco digitizing</div>
+            <div class="toggle-list compact">
+              <label class="toggle">
+                <input id="melco-use-default-size" type="checkbox" />
+                <span>Use Melco default size <span class="tip" tabindex="0" data-tip="If enabled, the Lab does not send new_width/new_height. Melco chooses the output size from the uploaded artwork and account defaults.">?</span></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div id="zsk-options" class="provider-options" hidden>
+          <div class="control-block">
+            <div class="field-label">ZSK ACE optimize</div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Image type <span class="tip" tabindex="0" data-tip="ACE ImageType. Clipart expects clear flat colors; scanned image groups dithered/photo-like pixels. Highlight black strengthens dark contours.">?</span></span>
+                <select id="zsk-image-type">
+                  <option value="0">Clipart</option>
+                  <option value="1">Scanned image</option>
+                  <option value="2">Clipart, highlight black</option>
+                  <option value="3">Scanned image, highlight black</option>
+                </select>
+              </label>
+              <label>
+                <span class="label-with-tip">Max colors <span class="tip" tabindex="0" data-tip="ACE MaxColors. Reduces the bitmap to this maximum number of colors before vector and stitch generation.">?</span></span>
+                <input id="zsk-max-colors" type="number" min="1" max="256" step="1" value="24" />
+              </label>
+            </div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Color tolerance <span class="tip" tabindex="0" data-tip="ACE optimize Tolerance, 0-300. Higher values group more similar colors before vectorization.">?</span></span>
+                <input id="zsk-optimize-tolerance" type="number" min="0" max="300" step="1" value="150" />
+              </label>
+              <label>
+                <span class="label-with-tip">Remove area <span class="tip" tabindex="0" data-tip="ACE RemoveArea, 0-200. Removes small regions during bitmap optimization; lower values keep more detail.">?</span></span>
+                <input id="zsk-remove-area" type="number" min="0" max="200" step="1" value="60" />
+              </label>
+            </div>
+          </div>
+
+          <div class="control-block">
+            <div class="field-label">ZSK ACE vector</div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Vector tolerance <span class="tip" tabindex="0" data-tip="ACE vector Tolerance, 0-300. Groups similar vector regions after bitmap optimization.">?</span></span>
+                <input id="zsk-vector-tolerance" type="number" min="0" max="300" step="1" value="20" />
+              </label>
+              <label>
+                <span class="label-with-tip">Smoothing <span class="tip" tabindex="0" data-tip="ACE Smoothing, 0-200. Higher values reduce curve points and make shapes smoother.">?</span></span>
+                <input id="zsk-smoothing" type="number" min="0" max="200" step="1" value="50" />
+              </label>
+            </div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Background color <span class="tip" tabindex="0" data-tip="Sent as ACE BackgroundColor. Used directly when auto background detection is off.">?</span></span>
+                <input id="zsk-background-color" type="text" value="#ffffff" />
+              </label>
+              <div class="toggle-list compact">
+                <label class="toggle">
+                  <input id="zsk-determine-background" type="checkbox" checked />
+                  <span>Auto background <span class="tip" tabindex="0" data-tip="ACE DetermineBackgroundColor. When enabled, ACE detects the outside background color from the image.">?</span></span>
+                </label>
+                <label class="toggle">
+                  <input id="zsk-background-fill" type="checkbox" checked />
+                  <span>Fill background <span class="tip" tabindex="0" data-tip="ACE BackgroundFill. When off, regions using the background color are left unstitched.">?</span></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <details class="advanced-options">
+            <summary>Advanced ZSK ACE punch options</summary>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Line width <span class="tip" tabindex="0" data-tip="ACE LineWidth in 1/10 mm. Areas at or below this thickness become stitching lines.">?</span></span>
+                <input id="zsk-line-width" type="number" min="1" step="1" value="10" />
+              </label>
+              <label>
+                <span class="label-with-tip">Satin width <span class="tip" tabindex="0" data-tip="ACE SatinStitchWidth in 1/10 mm. Wider areas become fill stitches.">?</span></span>
+                <input id="zsk-satin-stitch-width" type="number" min="1" step="1" value="70" />
+              </label>
+            </div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Overlap <span class="tip" tabindex="0" data-tip="ACE Overlap in 1/10 mm. Inflates adjacent regions to reduce stitch gaps.">?</span></span>
+                <input id="zsk-overlap" type="number" min="0" step="1" value="2" />
+              </label>
+              <label>
+                <span class="label-with-tip">Min area <span class="tip" tabindex="0" data-tip="ACE MinimumAreaSize in square millimeters. Smaller regions are filtered out.">?</span></span>
+                <input id="zsk-minimum-area-size" type="number" min="1" step="1" value="5" />
+              </label>
+            </div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Min hole <span class="tip" tabindex="0" data-tip="ACE MinimumHoleSize in square millimeters. Smaller holes are removed.">?</span></span>
+                <input id="zsk-minimum-hole-size" type="number" min="1" step="1" value="1" />
+              </label>
+              <label>
+                <span class="label-with-tip">Min line length <span class="tip" tabindex="0" data-tip="ACE MinimumLineLength in 1/10 mm. Shorter stitch lines are filtered out.">?</span></span>
+                <input id="zsk-minimum-line-length" type="number" min="1" step="1" value="50" />
+              </label>
+            </div>
+            <label>
+              <span class="label-with-tip">Thread cones <span class="tip" tabindex="0" data-tip="Optional ACE UseThreadCones color chart filename. Empty lets the ZSK service choose its default.">?</span></span>
+              <select id="zsk-thread-cones">
+                <option value="">Default</option>
+                <option value="Amann-Isacord 40.json">Amann-Isacord 40</option>
+                <option value="Madeira-POLYNEON 40.json">Madeira-POLYNEON 40</option>
+                <option value="Madeira-CLASSIC 40.json">Madeira-CLASSIC 40</option>
+                <option value="Gunold-Poly 40.json">Gunold-Poly 40</option>
+              </select>
+            </label>
           </details>
         </div>
 
@@ -263,6 +473,393 @@
         <pre id="request-xml" class="request-xml" hidden></pre>
       </section>
     </main>
+
+    <dialog id="comparison-dialog" class="comparison-dialog">
+      <section id="comparison-section" class="comparison-panel" aria-labelledby="comparison-title">
+        <div class="panel-heading">
+          <div>
+            <h2 id="comparison-title">Comparison results</h2>
+            <span id="comparison-summary" class="run-id"></span>
+          </div>
+          <div class="dialog-actions">
+            <button id="comparison-recap-button" class="ghost-button" type="button" hidden>Download MD</button>
+            <button id="comparison-html-recap-button" class="ghost-button" type="button" hidden>Download HTML</button>
+            <button id="comparison-close" class="ghost-button" type="button">Close</button>
+          </div>
+        </div>
+        <div id="comparison-grid" class="comparison-grid"></div>
+      </section>
+    </dialog>
+
+    <dialog id="history-dialog" class="history-dialog">
+      <section class="history-panel" aria-labelledby="history-title">
+        <div class="panel-heading">
+          <div>
+            <h2 id="history-title">History</h2>
+            <span id="history-summary" class="run-id"></span>
+          </div>
+          <button id="history-close" class="ghost-button" type="button">Close</button>
+        </div>
+        <div class="history-layout">
+          <article class="history-section">
+            <div class="history-section-head">
+              <h3>Compare groups</h3>
+              <span id="history-compares-count" class="run-id"></span>
+            </div>
+            <div id="history-compares" class="history-list"></div>
+          </article>
+          <article class="history-section">
+            <div class="history-section-head">
+              <h3>Raw executions</h3>
+              <span id="history-executions-count" class="run-id"></span>
+            </div>
+            <div id="history-executions" class="history-list"></div>
+          </article>
+        </div>
+      </section>
+    </dialog>
+
+    <dialog id="compare-dialog" class="compare-dialog">
+      <form method="dialog" class="compare-shell">
+        <div class="panel-heading">
+          <h2>Compare runs</h2>
+          <button id="compare-close" class="ghost-button" type="button">Close</button>
+        </div>
+
+        <div class="compare-layout">
+          <section class="compare-step" aria-labelledby="compare-images-title">
+            <h3 id="compare-images-title">Images</h3>
+            <label class="drop-zone compare-upload" for="compare-file-input">
+              <input id="compare-file-input" type="file" multiple accept="image/png,image/jpeg,image/bmp,image/gif,image/tiff,application/pdf,application/postscript,.pdf,.eps" />
+              <span>Choose images</span>
+              <span id="compare-upload-list">PNG, JPG, BMP, GIF, TIF, PDF, EPS</span>
+            </label>
+            <div id="compare-sample-grid" class="sample-grid compare-sample-grid"></div>
+          </section>
+
+          <section class="compare-step" aria-labelledby="compare-services-title">
+            <h3 id="compare-services-title">Services</h3>
+            <div id="compare-provider-list" class="compare-provider-list"></div>
+            <label class="compare-mode-field">
+              <span class="label-with-tip">Mode <span class="tip" tabindex="0" data-tip="Preview runs request generated images only. Design file runs also ask providers for production files when supported.">?</span></span>
+              <select id="compare-mode">
+                <option value="trueview">Preview</option>
+                <option value="design">Design file</option>
+              </select>
+            </label>
+          </section>
+
+          <section class="compare-step compare-run-settings" aria-labelledby="compare-run-settings-title">
+            <h3 id="compare-run-settings-title">Run settings</h3>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Max source side px <span class="tip" tabindex="0" data-tip="Server-side source image downscale before every compare conversion. Wilcom still applies stricter pixel and byte limits automatically.">?</span></span>
+                <input id="compare-source-max-side" type="number" min="0" step="100" value="3000" />
+              </label>
+              <label>
+                <span class="label-with-tip">Min source side px <span class="tip" tabindex="0" data-tip="Server-side source image upscale before every compare conversion. Use at least 500 for providers that reject small images.">?</span></span>
+                <input id="compare-source-min-side" type="number" min="0" step="50" value="500" />
+              </label>
+            </div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Target width mm <span class="tip" tabindex="0" data-tip="Sent only to compare providers that use a target size and do not have their provider-specific source/default size option enabled.">?</span></span>
+                <input id="compare-width-mm" type="number" min="1" step="1" value="90" />
+              </label>
+              <label>
+                <span class="label-with-tip">Target height mm <span class="tip" tabindex="0" data-tip="Sent only to compare providers that use a target size and do not have their provider-specific source/default size option enabled.">?</span></span>
+                <input id="compare-height-mm" type="number" min="1" step="1" value="45" />
+              </label>
+            </div>
+          </section>
+        </div>
+
+        <section class="compare-provider-options" aria-labelledby="compare-options-title">
+          <h3 id="compare-options-title">Provider options</h3>
+
+          <article id="compare-wilcom-options" class="compare-provider-settings" hidden>
+            <div class="compare-provider-settings-head">
+              <strong>Wilcom EWA</strong>
+              <span>Only Wilcom requests use these settings.</span>
+            </div>
+            <div class="field-row">
+              <label id="compare-wilcom-format-block">
+                <span class="label-with-tip">Design format <span class="tip" tabindex="0" data-tip="Wilcom design output format, sent only in Design file compare mode.">?</span></span>
+                <select id="compare-wilcom-format">
+                  <option value="emb">EMB</option>
+                  <option value="dst">DST</option>
+                  <option value="pes">PES</option>
+                  <option value="exp">EXP</option>
+                  <option value="jef">JEF</option>
+                </select>
+              </label>
+              <label>
+                <span class="label-with-tip">Input type <span class="tip" tabindex="0" data-tip="Auto chooses bitmapArt for raster files and vectorArt for PDF/EPS. Force only for targeted Wilcom endpoint tests.">?</span></span>
+                <select id="compare-wilcom-input-kind">
+                  <option value="auto">Auto</option>
+                  <option value="bitmap">Bitmap</option>
+                  <option value="vector">Vector</option>
+                </select>
+              </label>
+            </div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">DPI <span class="tip" tabindex="0" data-tip="Wilcom output DPI for the TrueView PNG. Wilcom caps this at 300.">?</span></span>
+                <input id="compare-wilcom-dpi" type="number" min="1" max="300" step="1" value="160" />
+              </label>
+              <label id="compare-wilcom-design-version-block">
+                <span class="label-with-tip">EMB version <span class="tip" tabindex="0" data-tip="Optional Wilcom design_version. Sent only for EMB output in Design file mode.">?</span></span>
+                <select id="compare-wilcom-design-version">
+                  <option value="">Latest</option>
+                  <option value="Wilcom All-in-One Designs 27.0 (Digital Edition) (*.EMB)">2025 / 27.0</option>
+                  <option value="Wilcom All-in-One Designs 26.0 (Digital Edition) (*.EMB)">Digital Edition / 26.0</option>
+                  <option value="Wilcom All-in-One Designs e4.5 (*.EMB)">e4.5</option>
+                  <option value="Wilcom All-in-One Designs e4.2 (*.EMB)">e4.2</option>
+                  <option value="Wilcom All-in-One Designs e4.1 (*.EMB)">e4.1</option>
+                  <option value="Wilcom All-in-One Designs e4.0 (*.EMB)">e4.0</option>
+                  <option value="Wilcom All-in-One Designs e3.6 (*.EMB)">e3.6</option>
+                  <option value="Wilcom All-in-One Designs e3.5 (*.EMB)">e3.5</option>
+                  <option value="Wilcom All-in-One Designs e3 (*.EMB)">e3</option>
+                  <option value="Wilcom All-in-One Designs e2 (*.EMB)">e2</option>
+                </select>
+              </label>
+            </div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Color source <span class="tip" tabindex="0" data-tip="Default sends no thread list. Palette sends nominated hex colors. Thread chart uploads a .tch file.">?</span></span>
+                <select id="compare-wilcom-color-source">
+                  <option value="default">Default palette</option>
+                  <option value="palette">Palette</option>
+                  <option value="threadChart">Thread chart</option>
+                </select>
+              </label>
+              <div class="toggle-list compact">
+                <label class="toggle">
+                  <input id="compare-wilcom-use-source-dpi" type="checkbox" />
+                  <span>Use source DPI <span class="tip" tabindex="0" data-tip="Omits target width/height for Wilcom. Wilcom sizes from source DPI, or 96 DPI when missing.">?</span></span>
+                </label>
+                <label class="toggle">
+                  <input id="compare-wilcom-remove-background" type="checkbox" checked />
+                  <span>Remove background <span class="tip" tabindex="0" data-tip="Wilcom bitmap option. Asks Wilcom to remove the background before auto-digitizing.">?</span></span>
+                </label>
+              </div>
+            </div>
+            <div id="compare-wilcom-palette-block" class="control-block" hidden>
+              <div class="field-label">Thread palette <span class="tip" tabindex="0" data-tip="Wilcom nominated thread colors. Auto-filled from the selected compare image unless you edit the swatches manually.">?</span></div>
+              <div id="compare-wilcom-swatches" class="swatches"></div>
+              <input id="compare-wilcom-threads" type="hidden" value="#0073cf,#ffffff,#ff5b00,#ff2ba6,#64c05a" />
+            </div>
+            <div id="compare-wilcom-thread-chart-block" class="control-block" hidden>
+              <label>
+                <span class="label-with-tip">Thread chart .tch <span class="tip" tabindex="0" data-tip="Wilcom thread_file. Uploaded with the compare request and used only when Color source is Thread chart.">?</span></span>
+                <input id="compare-wilcom-thread-chart" type="file" accept=".tch" />
+              </label>
+              <span id="compare-wilcom-thread-chart-name" class="run-id">No chart selected</span>
+            </div>
+          </article>
+
+          <article id="compare-pulse-options" class="compare-provider-settings" hidden>
+            <div class="compare-provider-settings-head">
+              <strong>PulseID</strong>
+              <span>Only PulseID requests use these settings.</span>
+            </div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Run type <span class="tip" tabindex="0" data-tip="Full conversion calls GetInfo, renders the preview, and generates design files in Design file mode. Quick estimate calls GetInfo, renders a smaller preview, and skips production files.">?</span></span>
+                <select id="compare-pulse-run-type">
+                  <option value="full">Full conversion</option>
+                  <option value="quick">Quick estimate + preview</option>
+                </select>
+              </label>
+              <label>
+                <span class="label-with-tip">Timeout seconds <span class="tip" tabindex="0" data-tip="PulseID TimeoutSeconds for autodigitizing. Quick estimate defaults lower, but this value is still sent to the API.">?</span></span>
+                <input id="compare-pulse-timeout-seconds" type="number" min="1" max="300" step="1" value="60" />
+              </label>
+            </div>
+            <div class="field-row">
+              <label id="compare-pulse-format-block">
+                <span class="label-with-tip">Design format <span class="tip" tabindex="0" data-tip="PulseID generate format, sent only in Design file compare mode.">?</span></span>
+                <select id="compare-pulse-format">
+                  <option value="dst">DST</option>
+                  <option value="pes">PES</option>
+                  <option value="pxf">PXF</option>
+                  <option value="tcf">TCF</option>
+                  <option value="z00">Z00</option>
+                  <option value="pcf">PCF</option>
+                </select>
+              </label>
+              <label>
+                <span class="label-with-tip">Thread type <span class="tip" tabindex="0" data-tip="PulseID thread material model. It affects autodigitizing and rendering.">?</span></span>
+                <select id="compare-pulse-thread-type">
+                  <option value="ttPolyester">Polyester</option>
+                  <option value="ttRayon">Rayon</option>
+                  <option value="ttCotton">Cotton</option>
+                  <option value="ttNylon">Nylon</option>
+                  <option value="ttMetallic">Metallic</option>
+                </select>
+              </label>
+            </div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Thread thickness <span class="tip" tabindex="0" data-tip="Optional PulseID thread thickness. Empty uses PulseID defaults.">?</span></span>
+                <input id="compare-pulse-thread-thickness" type="number" min="1" max="99" step="1" value="" placeholder="default" />
+              </label>
+              <label>
+                <span class="label-with-tip">Num colors <span class="tip" tabindex="0" data-tip="Optional PulseID color reduction. Empty keeps automatic behavior.">?</span></span>
+                <input id="compare-pulse-num-colors" type="number" min="1" step="1" value="" placeholder="auto" />
+              </label>
+            </div>
+            <div class="toggle-list compact">
+              <label class="toggle"><input id="compare-pulse-ignore-small-areas" type="checkbox" checked /><span>Ignore small areas</span></label>
+              <label class="toggle"><input id="compare-pulse-create-satin" type="checkbox" checked /><span>Create satin/steil</span></label>
+              <label class="toggle"><input id="compare-pulse-add-steil-borders" type="checkbox" /><span>Add steil borders</span></label>
+              <label class="toggle"><input id="compare-pulse-generate-background" type="checkbox" /><span>Stitch background</span></label>
+              <label class="toggle"><input id="compare-pulse-use-image-dimensions" type="checkbox" /><span>Use image dimensions</span></label>
+            </div>
+            <div class="field-row">
+              <label>
+                <span class="label-with-tip">Sequence <span class="tip" tabindex="0" data-tip="PulseID sewing order. Min colors reduces color changes, Min jumps reduces jumps, Smart tries borders after fills.">?</span></span>
+                <select id="compare-pulse-sequence-type">
+                  <option value="stMinimizeColorChanges">Min colors</option>
+                  <option value="stSmart">Smart</option>
+                  <option value="stMinimizeJumps">Min jumps</option>
+                  <option value="stNone">None</option>
+                </select>
+              </label>
+              <label>
+                <span class="label-with-tip">Trim <span class="tip" tabindex="0" data-tip="PulseID trim behavior. Trim at can use the optional threshold.">?</span></span>
+                <select id="compare-pulse-trim-type">
+                  <option value="ttAlways">Always</option>
+                  <option value="ttNever">Never</option>
+                  <option value="ttTrimAt">Trim at</option>
+                </select>
+              </label>
+            </div>
+            <details class="advanced-options">
+              <summary>Advanced Pulse options</summary>
+              <div class="field-row">
+                <label><span class="label-with-tip">Lock <span class="tip" tabindex="0" data-tip="PulseID lock stitches. Around trim is the documented default.">?</span></span><select id="compare-pulse-lock-type"><option value="ltAroundTrim">Around trim</option><option value="ltAlways">Always</option><option value="ltNever">Never</option></select></label>
+                <label><span class="label-with-tip">Trim threshold <span class="tip" tabindex="0" data-tip="Optional distance threshold for Trim at behavior.">?</span></span><input id="compare-pulse-trim-threshold" type="number" min="0" step="0.1" value="" placeholder="default" /></label>
+              </div>
+              <div class="field-row">
+                <label><span class="label-with-tip">Run max width <span class="tip" tabindex="0" data-tip="Advanced threshold in embroidery points for run stitches.">?</span></span><input id="compare-pulse-maximum-run-width" type="number" min="1" step="1" value="" placeholder="default" /></label>
+                <label><span class="label-with-tip">Satin max width <span class="tip" tabindex="0" data-tip="Advanced threshold in embroidery points for satin columns.">?</span></span><input id="compare-pulse-maximum-satin-width" type="number" min="1" step="1" value="" placeholder="default" /></label>
+              </div>
+              <div class="field-row">
+                <label><span class="label-with-tip">Steil max width <span class="tip" tabindex="0" data-tip="Advanced threshold in embroidery points for steil stitches.">?</span></span><input id="compare-pulse-maximum-steil-width" type="number" min="1" step="1" value="" placeholder="default" /></label>
+                <label><span class="label-with-tip">Recipe <span class="tip" tabindex="0" data-tip="PulseID render/generate recipe. Normal is the documented default.">?</span></span><input id="compare-pulse-recipe" type="text" value="Normal" /></label>
+              </div>
+              <div class="field-row">
+                <label><span class="label-with-tip">Render width <span class="tip" tabindex="0" data-tip="PulseID preview image width in pixels.">?</span></span><input id="compare-pulse-render-width" type="number" min="100" step="10" value="1100" /></label>
+                <label><span class="label-with-tip">Render height <span class="tip" tabindex="0" data-tip="PulseID preview image height in pixels.">?</span></span><input id="compare-pulse-render-height" type="number" min="100" step="10" value="1600" /></label>
+              </div>
+              <div class="field-row">
+                <label><span class="label-with-tip">Padding <span class="tip" tabindex="0" data-tip="Pixel margin around the PulseID rendered preview.">?</span></span><input id="compare-pulse-render-padding" type="number" min="0" step="1" value="40" /></label>
+                <div class="toggle-list compact">
+                  <label class="toggle"><input id="compare-pulse-proportional-resize" type="checkbox" checked /><span>Proportional resize</span></label>
+                  <label class="toggle"><input id="compare-pulse-lighten-shadows" type="checkbox" /><span>Lighten shadows</span></label>
+                  <label class="toggle"><input id="compare-pulse-transparent-preview" type="checkbox" checked /><span>Transparent preview</span></label>
+                </div>
+              </div>
+            </details>
+          </article>
+
+          <article id="compare-melco-options" class="compare-provider-settings" hidden>
+            <div class="compare-provider-settings-head">
+              <strong>Melco Cloud</strong>
+              <span>Only Melco requests use these settings.</span>
+            </div>
+            <div class="field-row">
+              <label id="compare-melco-format-block">
+                <span class="label-with-tip">Design format <span class="tip" tabindex="0" data-tip="Melco download format, sent only in Design file compare mode.">?</span></span>
+                <select id="compare-melco-format">
+                  <option value="ofm">OFM</option>
+                  <option value="exp">EXP</option>
+                  <option value="dst">DST</option>
+                </select>
+              </label>
+              <div class="toggle-list compact">
+                <label class="toggle">
+                  <input id="compare-melco-use-default-size" type="checkbox" checked />
+                  <span>Use Melco default size <span class="tip" tabindex="0" data-tip="If enabled, compare omits new_width/new_height for Melco and Melco chooses size from artwork/account defaults.">?</span></span>
+                </label>
+              </div>
+            </div>
+          </article>
+
+          <article id="compare-zsk-options" class="compare-provider-settings" hidden>
+            <div class="compare-provider-settings-head">
+              <strong>ZSK ACE</strong>
+              <span>Only ZSK ACE requests use these settings.</span>
+            </div>
+            <div class="field-row">
+              <label id="compare-zsk-format-block">
+                <span class="label-with-tip">Design format <span class="tip" tabindex="0" data-tip="ZSK design output format, sent only in Design file compare mode.">?</span></span>
+                <select id="compare-zsk-format">
+                  <option value="z00">Z00</option>
+                  <option value="dst">DST</option>
+                </select>
+              </label>
+              <label>
+                <span class="label-with-tip">Image type <span class="tip" tabindex="0" data-tip="ACE ImageType. Clipart expects clear flat colors; scanned image groups dithered/photo-like pixels.">?</span></span>
+                <select id="compare-zsk-image-type">
+                  <option value="0">Clipart</option>
+                  <option value="1">Scanned image</option>
+                  <option value="2">Clipart, highlight black</option>
+                  <option value="3">Scanned image, highlight black</option>
+                </select>
+              </label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Max colors <span class="tip" tabindex="0" data-tip="ACE MaxColors. Reduces the bitmap to this maximum number of colors.">?</span></span><input id="compare-zsk-max-colors" type="number" min="1" max="256" step="1" value="24" /></label>
+              <label><span class="label-with-tip">Color tolerance <span class="tip" tabindex="0" data-tip="ACE optimize Tolerance, 0-300. Higher values group more similar colors.">?</span></span><input id="compare-zsk-optimize-tolerance" type="number" min="0" max="300" step="1" value="150" /></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Remove area <span class="tip" tabindex="0" data-tip="ACE RemoveArea, 0-200. Removes small regions during bitmap optimization.">?</span></span><input id="compare-zsk-remove-area" type="number" min="0" max="200" step="1" value="60" /></label>
+              <label><span class="label-with-tip">Vector tolerance <span class="tip" tabindex="0" data-tip="ACE vector Tolerance, 0-300. Groups similar vector regions after bitmap optimization.">?</span></span><input id="compare-zsk-vector-tolerance" type="number" min="0" max="300" step="1" value="20" /></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Smoothing <span class="tip" tabindex="0" data-tip="ACE Smoothing, 0-200. Higher values reduce curve points and make shapes smoother.">?</span></span><input id="compare-zsk-smoothing" type="number" min="0" max="200" step="1" value="50" /></label>
+              <label><span class="label-with-tip">Background color <span class="tip" tabindex="0" data-tip="Sent as ACE BackgroundColor when auto background detection is off.">?</span></span><input id="compare-zsk-background-color" type="text" value="#ffffff" /></label>
+            </div>
+            <div class="toggle-list compact">
+              <label class="toggle"><input id="compare-zsk-determine-background" type="checkbox" checked /><span>Auto background</span></label>
+              <label class="toggle"><input id="compare-zsk-background-fill" type="checkbox" checked /><span>Fill background</span></label>
+            </div>
+            <details class="advanced-options">
+              <summary>Advanced ZSK ACE punch options</summary>
+              <div class="field-row">
+                <label><span class="label-with-tip">Line width <span class="tip" tabindex="0" data-tip="ACE LineWidth in 1/10 mm. Areas at or below this thickness become stitch lines.">?</span></span><input id="compare-zsk-line-width" type="number" min="1" step="1" value="10" /></label>
+                <label><span class="label-with-tip">Satin width <span class="tip" tabindex="0" data-tip="ACE SatinStitchWidth in 1/10 mm. Wider areas become fill stitches.">?</span></span><input id="compare-zsk-satin-stitch-width" type="number" min="1" step="1" value="70" /></label>
+              </div>
+              <div class="field-row">
+                <label><span class="label-with-tip">Overlap <span class="tip" tabindex="0" data-tip="ACE Overlap in 1/10 mm. Inflates adjacent regions to reduce stitch gaps.">?</span></span><input id="compare-zsk-overlap" type="number" min="0" step="1" value="2" /></label>
+                <label><span class="label-with-tip">Min area <span class="tip" tabindex="0" data-tip="ACE MinimumAreaSize in square millimeters. Smaller regions are filtered out.">?</span></span><input id="compare-zsk-minimum-area-size" type="number" min="1" step="1" value="5" /></label>
+              </div>
+              <div class="field-row">
+                <label><span class="label-with-tip">Min hole <span class="tip" tabindex="0" data-tip="ACE MinimumHoleSize in square millimeters. Smaller holes are removed.">?</span></span><input id="compare-zsk-minimum-hole-size" type="number" min="1" step="1" value="1" /></label>
+                <label><span class="label-with-tip">Min line length <span class="tip" tabindex="0" data-tip="ACE MinimumLineLength in 1/10 mm. Shorter stitch lines are filtered out.">?</span></span><input id="compare-zsk-minimum-line-length" type="number" min="1" step="1" value="50" /></label>
+              </div>
+              <label>
+                <span class="label-with-tip">Thread cones <span class="tip" tabindex="0" data-tip="Optional ACE UseThreadCones color chart filename. Empty lets the ZSK service choose its default.">?</span></span>
+                <select id="compare-zsk-thread-cones">
+                  <option value="">Default</option>
+                  <option value="Amann-Isacord 40.json">Amann-Isacord 40</option>
+                  <option value="Madeira-POLYNEON 40.json">Madeira-POLYNEON 40</option>
+                  <option value="Madeira-CLASSIC 40.json">Madeira-CLASSIC 40</option>
+                  <option value="Gunold-Poly 40.json">Gunold-Poly 40</option>
+                </select>
+              </label>
+            </details>
+          </article>
+        </section>
+
+        <div class="compare-footer">
+          <span id="compare-status" class="status-inline">Idle</span>
+          <button id="compare-run-button" class="primary-button" type="button" disabled>Run comparison</button>
+        </div>
+      </form>
+    </dialog>
 
     <script src="/app.js" type="module"></script>
   </body>

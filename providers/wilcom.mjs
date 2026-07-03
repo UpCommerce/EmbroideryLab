@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import sharp from "sharp";
 
 const DEFAULT_BASE_URL = "https://public.ewa.wilcomapps.com";
 const SUPPORTED_BITMAP_EXTENSIONS = new Set([
@@ -12,6 +13,10 @@ const SUPPORTED_BITMAP_EXTENSIONS = new Set([
   "tif",
   "tiff",
 ]);
+const SUPPORTED_VECTOR_EXTENSIONS = new Set(["pdf", "eps"]);
+const MAX_ARTWORK_BYTES = 2_000_000;
+const MAX_REQUEST_XML_BYTES = 20 * 1024 * 1024;
+const MAX_AREA_MM2 = 22500;
 
 export const wilcomProvider = {
   id: "wilcom",
@@ -31,29 +36,58 @@ export const wilcomProvider = {
   async convert(input, options, runDir) {
     mkdirSync(runDir, { recursive: true });
 
-    const extension = getExtension(input.name);
-    if (!SUPPORTED_BITMAP_EXTENSIONS.has(extension)) {
-      throw httpError(400, `Formato bitmap non supportato: .${extension}`);
+    const wilcomOptions = options.wilcom ?? options;
+    let extension = getExtension(input.name);
+    let sourceKind = resolveSourceKind(extension, wilcomOptions.inputKind);
+    const preparedInput = await prepareWilcomInput({
+      input,
+      sourceKind,
+      wilcomOptions,
+      runDir,
+    });
+    const wilcomInput = preparedInput.input;
+    extension = getExtension(wilcomInput.name);
+    sourceKind = preparedInput.sourceKind;
+    validateSourceExtension(sourceKind, extension);
+    validateArtworkSize(wilcomInput);
+
+    const widthMm = wilcomOptions.useSourceDpi
+      ? undefined
+      : positiveNumberOrUndefined(options.widthMm ?? wilcomOptions.widthMm);
+    const heightMm = wilcomOptions.useSourceDpi
+      ? undefined
+      : positiveNumberOrUndefined(options.heightMm ?? wilcomOptions.heightMm);
+    validateTargetArea(widthMm, heightMm);
+
+    const colorSource = normalizeColorSource(wilcomOptions.colorSource);
+    const threads = colorSource === "palette" ? parseThreads(wilcomOptions.threads ?? options.threads ?? []) : [];
+    const threadChart = colorSource === "threadChart" ? parseThreadChart(wilcomOptions.threadChart) : null;
+    if (colorSource === "threadChart" && !threadChart) {
+      throw httpError(400, "Wilcom thread chart mancante: carica un file .tch oppure usa Palette/Default.");
     }
 
     const mode = options.mode === "design" ? "design" : "trueview";
     const designFormat = normalizeDesignFormat(options.designFormat ?? "emb");
+    const designVersion = normalizeDesignVersion(wilcomOptions.designVersion, designFormat);
     const trueviewFileName = "trueview.png";
     const designFileName = `design.${designFormat}`;
-    const threads = parseThreads(options.threads ?? []);
 
     const requestXml = buildRequestXml({
-      inputFileName: sanitizeFileName(input.name),
-      inputBase64: input.base64,
+      sourceKind,
+      inputFileName: sanitizeFileName(wilcomInput.name),
+      inputBase64: wilcomInput.base64,
       mode,
       trueviewFileName,
       designFileName,
-      widthMm: positiveNumberOrUndefined(options.widthMm),
-      heightMm: positiveNumberOrUndefined(options.heightMm),
-      dpi: positiveIntegerOrDefault(options.dpi, 160),
-      removeBackground: Boolean(options.removeBackground ?? true),
+      designVersion,
+      widthMm,
+      heightMm,
+      dpi: positiveIntegerOrDefault(wilcomOptions.dpi ?? options.dpi, 160),
+      removeBackground: Boolean(wilcomOptions.removeBackground ?? options.removeBackground ?? true),
       threads,
+      threadChart,
     });
+    validateRequestXmlSize(requestXml);
 
     const requestPath = join(runDir, "wilcom-request.xml");
     writeFileSync(requestPath, requestXml, "utf8");
@@ -63,31 +97,42 @@ export const wilcomProvider = {
     }
 
     const baseUrl = (process.env.WILCOM_EWA_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/+$/, "");
-    const method = mode === "design" ? "bitmapArtDesign" : "bitmapArtTrueview";
+    const methodPrefix = sourceKind === "vector" ? "vectorArt" : "bitmapArt";
+    const method = `${methodPrefix}${mode === "design" ? "Design" : "Trueview"}`;
+    const requestBody = new URLSearchParams({
+      appId: process.env.WILCOM_EWA_APP_ID,
+      appKey: process.env.WILCOM_EWA_APP_KEY,
+      requestXml,
+    });
     const response = await fetch(`${baseUrl}/api/${method}`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        appId: process.env.WILCOM_EWA_APP_ID,
-        appKey: process.env.WILCOM_EWA_APP_KEY,
-        requestXml,
-      }),
+      body: requestBody,
     });
 
     const responseXml = await response.text();
     writeFileSync(join(runDir, "wilcom-response.xml"), responseXml, "utf8");
+    const errorInfo = parseFirstTagAttributes(responseXml, "error_info");
 
     if (!response.ok) {
-      throw httpError(response.status, `Wilcom HTTP ${response.status}`, { responseXml });
+      throw httpError(response.status, wilcomErrorMessage(response.status, errorInfo), {
+        errorInfo,
+        responseBody: responseXml,
+        responseXml,
+      });
     }
 
-    const errorInfo = parseFirstTagAttributes(responseXml, "error_info");
     if (errorInfo) {
-      throw httpError(400, "Wilcom ha restituito un errore", { errorInfo, responseXml });
+      throw httpError(400, wilcomErrorMessage(400, errorInfo), {
+        errorInfo,
+        responseBody: responseXml,
+        responseXml,
+      });
     }
 
     const files = [];
     const runFiles = [
+      ...preparedInput.runFiles,
       { name: "wilcom-request.xml", kind: "request" },
       { name: "wilcom-response.xml", kind: "response" },
     ];
@@ -123,20 +168,24 @@ export const wilcomProvider = {
 };
 
 function buildRequestXml({
+  sourceKind,
   inputFileName,
   inputBase64,
   mode,
   trueviewFileName,
   designFileName,
+  designVersion,
   widthMm,
   heightMm,
   dpi,
   removeBackground,
   threads,
+  threadChart,
 }) {
   const dimensions = [
     widthMm ? `width="${xmlAttr(widthMm)}"` : "",
     heightMm ? `height="${xmlAttr(heightMm)}"` : "",
+    threadChart ? `thread_file="${xmlAttr(threadChart.name)}"` : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -144,6 +193,7 @@ function buildRequestXml({
   const outputAttrs = [
     `trueview_file="${xmlAttr(trueviewFileName)}"`,
     mode === "design" ? `design_file="${xmlAttr(designFileName)}"` : "",
+    designVersion ? `design_version="${xmlAttr(designVersion)}"` : "",
     `dpi="${xmlAttr(String(dpi))}"`,
   ]
     .filter(Boolean)
@@ -163,15 +213,153 @@ function buildRequestXml({
   return [
     '<?xml version="1.0" encoding="utf-8"?>',
     "<xml>",
-    `  <bitmap file="${xmlAttr(inputFileName)}" remove_background="${removeBackground}" />`,
+    `  <${sourceKind} file="${xmlAttr(inputFileName)}" remove_background="${removeBackground}" />`,
     `  <autodigitize_options${dimensions ? ` ${dimensions}` : ""}>${threadXml ? `\n${threadXml}\n  ` : ""}</autodigitize_options>`,
     `  <output ${outputAttrs} />`,
     "  <files>",
     `    <file filename="${xmlAttr(inputFileName)}" filecontents="${inputBase64}" />`,
+    ...(threadChart ? [`    <file filename="${xmlAttr(threadChart.name)}" filecontents="${threadChart.base64}" />`] : []),
     "  </files>",
     "</xml>",
     "",
   ].join("\n");
+}
+
+async function prepareWilcomInput({ input, sourceKind, wilcomOptions, runDir }) {
+  const shouldSimplify =
+    sourceKind === "bitmap" &&
+    (wilcomOptions.simplifyBitmap === true || wilcomOptions.simplifyBitmap === "true");
+
+  if (!shouldSimplify) {
+    return { input, sourceKind, runFiles: [] };
+  }
+
+  const colors = integerRangeOrDefault(wilcomOptions.simplifyColors, 24, 2, 256, "Wilcom simplify colors");
+  const originalBuffer = Buffer.from(input.base64, "base64");
+  let simplifiedBuffer;
+
+  try {
+    simplifiedBuffer = await sharp(originalBuffer, { failOn: "none", limitInputPixels: false })
+      .rotate()
+      .toColourspace("srgb")
+      .png({ palette: true, colors, compressionLevel: 9 })
+      .toBuffer();
+  } catch (error) {
+    throw httpError(400, `Preprocess Wilcom non riuscito: ${error.message}`);
+  }
+
+  const simplifiedName = "wilcom-source-simplified.png";
+  const summaryName = "wilcom-source-simplified.json";
+  writeFileSync(join(runDir, simplifiedName), simplifiedBuffer);
+  writeFileSync(
+    join(runDir, summaryName),
+    JSON.stringify(
+      {
+        original: {
+          name: input.name,
+          bytes: originalBuffer.length,
+        },
+        sent: {
+          name: simplifiedName,
+          bytes: simplifiedBuffer.length,
+          colors,
+        },
+        note: "Optional Wilcom bitmap simplification: palette PNG with a fixed number of colors before EWA autodigitizing.",
+      },
+      null,
+      2
+    ),
+    "utf8"
+  );
+
+  return {
+    input: {
+      name: simplifiedName,
+      mimeType: "image/png",
+      base64: simplifiedBuffer.toString("base64"),
+    },
+    sourceKind: "bitmap",
+    runFiles: [
+      { name: simplifiedName, kind: "source-sent" },
+      { name: summaryName, kind: "metadata" },
+    ],
+  };
+}
+
+function resolveSourceKind(extension, requestedKind = "auto") {
+  const normalized = String(requestedKind || "auto");
+  if (normalized === "bitmap" || normalized === "vector") return normalized;
+  if (SUPPORTED_VECTOR_EXTENSIONS.has(extension)) return "vector";
+  return "bitmap";
+}
+
+function validateSourceExtension(sourceKind, extension) {
+  const supported = sourceKind === "vector" ? SUPPORTED_VECTOR_EXTENSIONS : SUPPORTED_BITMAP_EXTENSIONS;
+  if (!supported.has(extension)) {
+    const label = sourceKind === "vector" ? "vector" : "bitmap";
+    throw httpError(400, `Formato ${label} Wilcom non supportato: .${extension}`);
+  }
+}
+
+function validateArtworkSize(input) {
+  const bytes = Buffer.byteLength(input.base64, "base64");
+  if (bytes > MAX_ARTWORK_BYTES) {
+    throw httpError(400, `Artwork Wilcom troppo grande: ${bytes} bytes. Limite: ${MAX_ARTWORK_BYTES} bytes.`);
+  }
+}
+
+function validateTargetArea(widthMm, heightMm) {
+  if (!widthMm || !heightMm) return;
+  const area = Number(widthMm) * Number(heightMm);
+  if (area > MAX_AREA_MM2) {
+    throw httpError(400, `Area ricamo Wilcom troppo grande: ${area.toFixed(0)} mm2. Limite: ${MAX_AREA_MM2} mm2.`);
+  }
+}
+
+function validateRequestXmlSize(requestXml) {
+  const bytes = Buffer.byteLength(requestXml, "utf8");
+  if (bytes > MAX_REQUEST_XML_BYTES) {
+    throw httpError(400, `Request Wilcom troppo grande: ${bytes} bytes. Limite: ${MAX_REQUEST_XML_BYTES} bytes.`);
+  }
+}
+
+function normalizeColorSource(value) {
+  const normalized = String(value || "palette");
+  if (["palette", "threadChart", "default"].includes(normalized)) return normalized;
+  throw httpError(400, "Wilcom color source non valido");
+}
+
+function normalizeDesignVersion(value, designFormat) {
+  if (value === "" || value === undefined || value === null) return undefined;
+  if (designFormat !== "emb") {
+    throw httpError(400, "Wilcom design_version puo essere usato solo con formato EMB");
+  }
+  return String(value);
+}
+
+function parseThreadChart(value) {
+  if (!value || typeof value !== "object") return null;
+  const name = sanitizeFileName(value.name || "");
+  if (!name.toLowerCase().endsWith(".tch")) {
+    throw httpError(400, "Wilcom thread chart non valido: serve un file .tch");
+  }
+
+  const dataUrl = typeof value.dataUrl === "string" ? value.dataUrl : "";
+  const dataUrlMatch = dataUrl.match(/^data:[^;]+;base64,(.+)$/);
+  const base64 = value.base64 || dataUrlMatch?.[1];
+  if (!base64) {
+    throw httpError(400, "Wilcom thread chart senza contenuto base64");
+  }
+
+  return { name, base64 };
+}
+
+function wilcomErrorMessage(status, errorInfo) {
+  if (errorInfo?.message) {
+    const code = errorInfo.errorcode ? ` ${errorInfo.errorcode}` : "";
+    return `Wilcom${code}: ${errorInfo.message}`;
+  }
+  return `Wilcom HTTP ${status}`;
 }
 
 function parseThreads(value) {
@@ -234,6 +422,14 @@ function positiveIntegerOrDefault(value, fallback) {
   const number = value === "" || value === undefined || value === null ? fallback : Number(value);
   if (!Number.isInteger(number) || number <= 0) {
     throw httpError(400, "DPI non valido");
+  }
+  return number;
+}
+
+function integerRangeOrDefault(value, fallback, min, max, label) {
+  const number = value === "" || value === undefined || value === null ? fallback : Number(value);
+  if (!Number.isInteger(number) || number < min || number > max) {
+    throw httpError(400, `${label} non valido`);
   }
   return number;
 }

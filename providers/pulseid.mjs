@@ -48,12 +48,18 @@ export const pulseIdProvider = {
 
     const mode = options.mode === "design" ? "design" : "trueview";
     const pulseOptions = options.pulse ?? {};
+    const runType = normalizeRunType(pulseOptions.runType);
     const designFormat = normalizeDesignFormat(options.designFormat ?? "dst");
     const widthPoints = mmToEmbroideryPoints(options.widthMm);
     const heightPoints = mmToEmbroideryPoints(options.heightMm);
     const renderWidthPx = positiveIntegerOrDefault(pulseOptions.renderWidth, 1100, "Render width");
     const renderHeightPx = positiveIntegerOrDefault(pulseOptions.renderHeight, 1600, "Render height");
     const renderPadding = positiveIntegerOrDefault(pulseOptions.renderPadding, 40, "Render padding", true);
+    const timeoutSeconds = positiveIntegerOrDefault(
+      pulseOptions.timeoutSeconds,
+      runType === "full" ? 60 : 20,
+      "Timeout seconds"
+    );
     const uploadName = `${Date.now()}-${sanitizeRemoteFileName(input.name || `design.${extension}`)}`;
     const baseUrl = (process.env.PULSEID_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/+$/, "");
     const sourceBuffer = Buffer.from(input.base64, "base64");
@@ -61,10 +67,16 @@ export const pulseIdProvider = {
       widthPoints,
       heightPoints,
       pulseOptions,
+      timeoutSeconds,
     });
     const recipe = normalizeOptionalText(pulseOptions.recipe);
 
     const uploadUrl = `${baseUrl}/1/Upload/Designs/${encodePath(uploadName)}?Format=json`;
+    const infoUrl = `${baseUrl}/1/GetInfo/Autodigitize/${encodePath(uploadName)}?${new URLSearchParams({
+      ...autodigitizeParams,
+      Format: "json",
+      ...(recipe ? { Recipe: recipe } : {}),
+    })}`;
     const renderUrl = `${baseUrl}/1/Render/Autodigitize/${encodePath(uploadName)}?${new URLSearchParams({
       ...autodigitizeParams,
       Format: "png",
@@ -85,9 +97,11 @@ export const pulseIdProvider = {
     const requestInfo = {
       provider: "pulse",
       mode,
+      runType,
       uploadUrl,
+      infoUrl,
       renderUrl,
-      generateUrl: mode === "design" ? generateUrl : null,
+      generateUrl: mode === "design" && runType === "full" ? generateUrl : null,
       autodigitizeParams,
       source: {
         name: input.name,
@@ -118,17 +132,25 @@ export const pulseIdProvider = {
       { name: "pulseid-request.json", kind: "request" },
       { name: "pulseid-upload-response.txt", kind: "response" },
     ];
+    let designInfo = null;
 
-    const preview = await fetchBinary(renderUrl, "PulseID render");
-    writeFileSync(join(runDir, "pulseid-preview.png"), preview.buffer);
-    files.push({
-      name: "pulseid-preview.png",
-      mimeType: preview.contentType || "image/png",
-      base64: preview.buffer.toString("base64"),
-    });
-    runFiles.push({ name: "pulseid-preview.png", kind: "preview" });
+    const info = await fetchText(infoUrl, "PulseID get info");
+    writeFileSync(join(runDir, "pulseid-getinfo-response.json"), info.text, "utf8");
+    runFiles.push({ name: "pulseid-getinfo-response.json", kind: "response" });
+    designInfo = parsePulseInfo(info.text);
 
-    if (mode === "design") {
+    if (runType !== "infoOnly") {
+      const preview = await fetchBinary(renderUrl, "PulseID render");
+      writeFileSync(join(runDir, "pulseid-preview.png"), preview.buffer);
+      files.push({
+        name: "pulseid-preview.png",
+        mimeType: preview.contentType || "image/png",
+        base64: preview.buffer.toString("base64"),
+      });
+      runFiles.push({ name: "pulseid-preview.png", kind: "preview" });
+    }
+
+    if (mode === "design" && runType === "full") {
       const design = await fetchBinary(generateUrl, "PulseID generate");
       const fileName = `pulseid-design.${designFormat}`;
       writeFileSync(join(runDir, fileName), design.buffer);
@@ -144,13 +166,13 @@ export const pulseIdProvider = {
       provider: "pulse",
       requestXml: JSON.stringify(requestInfo, null, 2),
       files,
-      designInfo: null,
+      designInfo,
       runFiles,
     };
   },
 };
 
-function buildAutodigitizeParams({ widthPoints, heightPoints, pulseOptions }) {
+function buildAutodigitizeParams({ widthPoints, heightPoints, pulseOptions, timeoutSeconds }) {
   const numColors = optionalPositiveInteger(pulseOptions.numColors, "Num colors");
   const params = {
     GenerateBackground: boolParam(pulseOptions.generateBackground, false),
@@ -170,7 +192,7 @@ function buildAutodigitizeParams({ widthPoints, heightPoints, pulseOptions }) {
     TrimType: enumParam(pulseOptions.trimType, TRIM_TYPES, "ttAlways", "Trim type"),
     LockType: enumParam(pulseOptions.lockType, LOCK_TYPES, "ltAroundTrim", "Lock type"),
     ProportionalResize: boolParam(pulseOptions.proportionalResize, true),
-    TimeoutSeconds: "60",
+    TimeoutSeconds: String(timeoutSeconds),
   };
 
   if (widthPoints) params.FinalWidth = String(widthPoints);
@@ -183,6 +205,23 @@ function buildAutodigitizeParams({ widthPoints, heightPoints, pulseOptions }) {
   if (numColors) params.NumColors = String(numColors);
 
   return params;
+}
+
+async function fetchText(url, label) {
+  const response = await fetch(url);
+  const text = await response.text();
+
+  if (!response.ok) {
+    throw httpError(response.status, `${label} HTTP ${response.status}`, {
+      responseBody: text,
+    });
+  }
+
+  if (/error|exception|failed/i.test(text)) {
+    throw httpError(400, `${label} returned error response`, { responseBody: text });
+  }
+
+  return { text, contentType: response.headers.get("content-type") ?? "" };
 }
 
 async function fetchBinary(url, label) {
@@ -204,6 +243,39 @@ async function fetchBinary(url, label) {
   }
 
   return { buffer, contentType };
+}
+
+function parsePulseInfo(text) {
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return null;
+  }
+
+  const info = parsed?.Info;
+  if (!info || typeof info !== "object") return null;
+  const palette = Array.isArray(info.Palette) ? info.Palette : [];
+  const stops = Array.isArray(info.Stops) ? info.Stops : [];
+
+  return {
+    width: info.Width,
+    height: info.Height,
+    unit: "embroidery points",
+    num_stitches: info.NumStitches,
+    num_trims: info.NumTrims,
+    num_colours: palette.length,
+    recipe: info.Recipe,
+    machine_format: info.MachineFormat,
+    master_density: info.MasterDensity,
+    palette,
+    stops,
+  };
+}
+
+function normalizeRunType(value) {
+  if (value === "quick" || value === "infoOnly") return value;
+  return "full";
 }
 
 function mmToEmbroideryPoints(value) {

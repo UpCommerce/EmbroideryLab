@@ -5,6 +5,28 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "check": "node --check server.mjs && node --check providers/wilcom.mjs && node --check providers/pulseid.mjs && node --check providers/melco.mjs && node --check providers/zsk.mjs"
-  }
+    "check": "node --check server.mjs && node --check providers/wilcom.mjs && node --check providers/pulseid.mjs && node --check providers/melco.mjs && node --check providers/zsk.mjs && node --check public/app.js && node --check scripts/normalize-samples.mjs",
+    "normalize:samples": "node scripts/normalize-samples.mjs"
+  },
+  "dependencies": {
+    "sharp": "^0.34.5"
+  },
+  "description": "Web app locale per testare provider embroidery uno alla volta con lo stesso flusso:",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UpCommerce/EmbroideryLab.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/UpCommerce/EmbroideryLab/issues"
+  },
+  "homepage": "https://github.com/UpCommerce/EmbroideryLab#readme"
 }
