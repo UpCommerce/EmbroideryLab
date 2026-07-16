@@ -195,13 +195,53 @@ curl -s https://embroiderylab.zakeke.me/api/history | jq '.executions | length'
 
 ## Note operative
 
-### Il PVC e' gestito da Helm
+### Backup e ripristino: il solo SQLite NON basta
 
-`helm uninstall embroidery-lab` **cancella il PVC** (`persistence.volumeClaims`) e la storageClass `longhorn` ha `reclaimPolicy: Delete`: history SQLite e artefatti in `runs/` vengono persi in modo irreversibile. Per un uninstall non distruttivo, fare prima un backup:
+**Il DB contiene solo riferimenti, non i byte.** In `executions` e `compares` i file sono salvati
+come URL (`/runs/<runId>/<file>` in `run_files_json`, `preview_url`, `source_url`); i byte veri
+stanno su disco in `runs/`, e il server li serve leggendoli dal filesystem. Ripristinare il solo
+`history.sqlite` produce una history che elenca le run ma con **ogni preview e ogni file macchina
+in 404**.
+
+Vale anche il contrario, ed e' meno ovvio: allo startup `server.mjs` chiama
+`backfillExecutionsFromRuns(runs/)`, che **ricostruisce le `executions` dai soli file su disco**
+(verificato: creata una run solo su disco, dopo il restart ricompare in `/api/history` con
+provider, data e lista file). Ma il backfill **non ricostruisce le `compares`**, e per le run
+riuscite perde `options` e `result`, che restano solo nel DB.
+
+Cosa serve davvero:
+
+| Directory | Contenuto | Se la perdi |
+| --- | --- | --- |
+| `data/` | `history.sqlite` | Perdi le **compares** (i confronti salvati) e `options`/`result` delle run. Le executions si ricostruiscono da `runs/` |
+| `runs/` | Artefatti reali: preview, `.emb`/`.dst`/`.z00`, request/response | Perdi **tutti i file**: la history resta ma i link vanno in 404. Non ricostruibile |
+| `source-originals/` | Originali pre-normalizzazione. `uploads/` = unica copia degli upload manuali | Perdi gli originali a piena risoluzione degli upload. `samples/` invece e' recuperabile dall'immagine |
+| `logs/` | `server-errors.ndjson` | Solo diagnostica, non serve al ripristino |
+
+Backup completo (tutte e tre le dir che contano):
 
 ```bash
-kubectl exec -n embroidery-lab deploy/embroidery-lab -- tar cf - -C /app data runs > embroidery-lab-backup.tar
+kubectl exec -n embroidery-lab deploy/embroidery-lab -- \
+  tar cf - -C /app data runs source-originals > embroidery-lab-backup.tar
 ```
+
+Ripristino:
+
+```bash
+kubectl exec -i -n embroidery-lab deploy/embroidery-lab -- \
+  tar xf - -C /app < embroidery-lab-backup.tar
+kubectl rollout restart deployment -n embroidery-lab embroidery-lab
+```
+
+> Il backup va fatto a pod fermo o a Lab inattivo: `tar` su un SQLite in scrittura puo' copiare
+> un file incoerente. Per un backup a caldo consistente, usare l'API di backup di SQLite:
+> `sqlite3 /app/data/history.sqlite ".backup /tmp/history-backup.sqlite"`.
+
+### Il PVC e' gestito da Helm
+
+`helm uninstall embroidery-lab` **cancella il PVC** (`persistence.volumeClaims`) e la storageClass
+`longhorn` ha `reclaimPolicy: Delete`: history SQLite e artefatti in `runs/` vengono persi in modo
+irreversibile. Fare prima il backup completo qui sopra.
 
 ### Espansione del disco
 
