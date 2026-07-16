@@ -7,7 +7,7 @@ environment: staging
 replicaCount: 1
 image:
   repository: zakekeaks.azurecr.io/embroidery-lab
-  tag: sha-afaf1a9 # riscritto dalla pipeline a sha-<commit>
+  tag: sha-1cbc671 # riscritto dalla pipeline a sha-<commit>
   pullPolicy: IfNotPresent
 deployment:
   # Recreate, non RollingUpdate: un pod di surge non riuscirebbe ad attaccare
@@ -161,7 +161,7 @@ externalSecret:
       remoteKey: embroiderylab-Zsk--WebApiBaseUrl
     - secretKey: Zsk--WebApiKey
       remoteKey: embroiderylab-Zsk--WebApiKey
-  # Zsk--AceToken assente di proposito: vedi commento in deployment.envSecretKeys.
+      # Zsk--AceToken assente di proposito: vedi commento in deployment.envSecretKeys.
 tests:
   enabled: true
   path: /health
