@@ -1,0 +1,178 @@
+# Embroidery Lab — staging (Talos on-prem, chart one-tier-app v2.0.0)
+# Il server Node serve sia le API sia la UI statica: singolo tier.
+
+environment: staging
+
+# Singleton obbligatorio: la history SQLite sta su un volume ReadWriteOnce.
+# Due pod sullo stesso file = corruzione, e il secondo non potrebbe attaccare il PVC.
+replicaCount: 1
+
+image:
+  repository: zakekeaks.azurecr.io/embroidery-lab
+  tag: latest # riscritto dalla pipeline a sha-<commit>
+  pullPolicy: IfNotPresent
+
+deployment:
+  # Recreate, non RollingUpdate: un pod di surge non riuscirebbe ad attaccare
+  # il PVC RWO ancora tenuto dal vecchio pod e il rollout andrebbe in deadlock.
+  # `rollingUpdate: null` e' obbligatorio: senza, il default del chart (25%/25%)
+  # verrebbe deep-merged e l'API server rifiuterebbe il Deployment, perche'
+  # rollingUpdate non e' ammesso insieme a type: Recreate.
+  strategy:
+    type: Recreate
+    rollingUpdate: null
+  env:
+    # Il server fa bind su 127.0.0.1 se HOST non e' settato: in un pod sarebbe
+    # irraggiungibile da Service e kubelet.
+    - name: HOST
+      value: "0.0.0.0"
+    - name: PORT
+      value: "8080"
+    - name: WILCOM_EWA_BASE_URL
+      value: "https://public.ewa.wilcomapps.com"
+    - name: PULSEID_BASE_URL
+      value: "https://webapi.pulseidconnect.com"
+    # Sandbox: la API key Melco e' legata all'ambiente che l'ha emessa.
+    # Passando a una key di produzione, cambiare anche questa in https://apis.melcocloud.com.
+    - name: MELCO_CLOUD_API_BASE_URL
+      value: "https://sandbox-apis.melcocloud.com"
+    - name: MELCO_CLOUD_OUTPUT_FORMAT
+      value: "ofm"
+    - name: SOURCE_MAX_SIDE_PX
+      value: "3000"
+    - name: SOURCE_MIN_SIDE_PX
+      value: "500"
+    - name: ZSK_WEB_API_AUTH_HEADER
+      value: "x-api-key"
+    - name: ZSK_WEB_API_ENDPOINT
+      value: "/StitchJob"
+  envSecretKeys:
+    - envKey: WILCOM_EWA_APP_ID
+      secret: embroidery-lab-secrets
+      secretKey: Wilcom--AppId
+    - envKey: WILCOM_EWA_APP_KEY
+      secret: embroidery-lab-secrets
+      secretKey: Wilcom--AppKey
+    - envKey: MELCO_CLOUD_API_KEY
+      secret: embroidery-lab-secrets
+      secretKey: Melco--ApiKey
+    - envKey: ZSK_WEB_API_BASE_URL
+      secret: embroidery-lab-secrets
+      secretKey: Zsk--WebApiBaseUrl
+    - envKey: ZSK_WEB_API_KEY
+      secret: embroidery-lab-secrets
+      secretKey: Zsk--WebApiKey
+    # ZSK_ACE_TOKEN non e' cablato: il token ACE non e' ancora disponibile e Azure Key Vault
+    # non accetta valori vuoti. Cablarlo verso una chiave inesistente bloccherebbe
+    # l'ExternalSecret e quindi l'avvio del pod. ZSK risulta `unavailable` con
+    # missing=[ZSK_ACE_TOKEN], che e' il comportamento corretto.
+    # Quando il token arriva: creare embroiderylab-Zsk--AceToken in KV e ripristinare
+    # questa voce piu' la corrispondente in externalSecret.keys.
+  volumes:
+    - name: data
+      claimName: embroidery-lab-data
+  # Tutte e quattro le dir sono scritte a runtime dall'app sotto la sua working
+  # dir. Un solo PVC con subPath distinti: senza questi mount, history e
+  # artefatti sarebbero persi a ogni restart.
+  volumeMounts:
+    - name: data
+      mountPath: /app/data # history.sqlite
+      subPath: data
+    - name: data
+      mountPath: /app/runs # artefatti per run (preview, .emb/.dst, request/response)
+      subPath: runs
+    - name: data
+      mountPath: /app/logs # server-errors.ndjson
+      subPath: logs
+    - name: data
+      mountPath: /app/source-originals # originali pre-normalizzazione
+      subPath: source-originals
+
+# uid/gid 1000 = utente `node` dell'immagine. fsGroup rende il volume Longhorn
+# scrivibile dal processo non-root: senza, l'app non puo' scrivere sul PVC.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+persistence:
+  volumeClaims:
+    - enabled: true
+      name: embroidery-lab-data
+      size: 20Gi
+      accessModes:
+        - ReadWriteOnce
+      # storageClass default del cluster, 3 repliche: il volume si riattacca
+      # su un altro nodo se quello corrente cade (rilevante per un singleton RWO).
+      storageClass: longhorn
+
+service:
+  enabled: true
+  port: 80
+  containerPort: 8080
+  protocol: TCP
+  type: ClusterIP
+
+ingress:
+  enabled: true
+  # ingressClassName: vuoto, derivato da environment (staging -> traefik)
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: embroiderylab.zakeke.me
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: embroiderylab-zakeke-me-tls
+      hosts:
+        - embroiderylab.zakeke.me
+
+healthCheck:
+  livenessProbe:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 30
+  readinessProbe:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  startupProbe:
+    enabled: true
+    path: /health
+    failureThreshold: 12
+
+# Profilo "API pesante": sharp fa resize/encode delle sorgenti in-process.
+resources:
+  enabled: true
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+externalSecret:
+  enabled: true
+  refreshInterval: "1h"
+  secretStoreName: azure-keyvault
+  secretStoreKind: ClusterSecretStore
+  targetSecretName: embroidery-lab-secrets
+  keys:
+    - secretKey: Wilcom--AppId
+      remoteKey: embroiderylab-Wilcom--AppId
+    - secretKey: Wilcom--AppKey
+      remoteKey: embroiderylab-Wilcom--AppKey
+    - secretKey: Melco--ApiKey
+      remoteKey: embroiderylab-Melco--ApiKey
+    - secretKey: Zsk--WebApiBaseUrl
+      remoteKey: embroiderylab-Zsk--WebApiBaseUrl
+    - secretKey: Zsk--WebApiKey
+      remoteKey: embroiderylab-Zsk--WebApiKey
+    # Zsk--AceToken assente di proposito: vedi commento in deployment.envSecretKeys.
+
+tests:
+  enabled: true
+  path: /health

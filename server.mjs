@@ -42,6 +42,10 @@ const server = createServer(async (request, response) => {
   try {
     const url = new URL(request.url ?? "/", "http://localhost");
 
+    if (request.method === "GET" && url.pathname === "/health") {
+      return sendJson(response, 200, { status: "ok" });
+    }
+
     if (request.method === "GET" && url.pathname === "/api/providers") {
       return sendJson(response, 200, { providers: getProviders() });
     }
@@ -90,6 +94,7 @@ const server = createServer(async (request, response) => {
 });
 
 const requestedPort = Number(process.env.PORT ?? 5174);
+const host = process.env.HOST ?? "127.0.0.1";
 listenWithFallback(requestedPort);
 
 async function handleConvert(response, body) {
@@ -417,8 +422,8 @@ function listenWithFallback(port) {
     throw error;
   });
 
-  server.listen(port, "127.0.0.1", () => {
-    console.log(`Embroidery Lab running at http://127.0.0.1:${port}`);
+  server.listen(port, host, () => {
+    console.log(`Embroidery Lab running at http://${host}:${port}`);
     console.log(`Workspace: ${ROOT_DIR}`);
   });
 }

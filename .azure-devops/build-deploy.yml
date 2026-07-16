@@ -1,0 +1,291 @@
+parameters:
+  - name: projectName
+    type: string
+    default: 'Embroidery Lab'
+  - name: environment
+    type: string
+    default: 'staging'
+    values: [staging, prod]
+  - name: helmChartVersion
+    type: string
+    default: '2.0.0'
+  - name: build
+    type: boolean
+    default: true
+  - name: deploy
+    type: boolean
+    default: true
+  - name: helmTimeout
+    type: string
+    default: '5m0s'
+  - name: dependencies
+    type: object
+    default: []
+
+variables:
+  - name: buildAgentPool
+    value: 'Prod Build - Linux'
+  - name: agentPool
+    value: 'Prod - Linux'
+  - name: dockerRegistryServiceConnection
+    value: 'Zakeke AKS - Azure ACR'
+  - group: zakeke-prod-ms-generated-kv
+  - name: appNamespace
+    value: 'embroidery-lab'
+  - name: imageName
+    value: 'embroidery-lab'
+  - name: dockerfilePath
+    value: 'Dockerfile'
+  - name: dockerfileContext
+    value: '.'
+  - name: releaseName
+    value: 'embroidery-lab'
+  - name: yqVersion
+    value: 'v4.44.6'
+
+trigger: none
+
+stages:
+  - stage: buildPushApp
+    displayName: 'Build&Push ${{ parameters.projectName }}'
+    dependsOn: []
+    condition: eq('${{ parameters.build }}', 'true')
+    jobs:
+      - job: Main
+        pool: { name: $(buildAgentPool) }
+        workspace: { clean: all }
+        steps:
+        - checkout: self
+        - script: |
+            sourceVersion=$(Build.SourceVersion)
+            commitHash="sha-"${sourceVersion:0:7}
+            echo "##vso[task.setvariable variable=commitHash]$commitHash"
+          displayName: Get commit hash
+        - task: Bash@3
+          displayName: 'Collect Docker build args'
+          inputs:
+            targetType: inline
+            script: |
+              TIER_PREFIX="BA_"
+              BUILD_ARGS=""
+              while IFS='=' read -r name value; do
+                if [[ "$name" == ${TIER_PREFIX}* ]]; then
+                  argName="${name#${TIER_PREFIX}}"
+                  BUILD_ARGS="$BUILD_ARGS --build-arg ${argName}=\"${value}\""
+                fi
+              done < <(env)
+              BUILD_ARGS="${BUILD_ARGS# }"
+              echo "##vso[task.setvariable variable=dockerBuildArgs]$BUILD_ARGS"
+        - task: Docker@2
+          displayName: Build Docker image
+          inputs:
+            containerRegistry: '$(dockerRegistryServiceConnection)'
+            repository: '$(imageName)'
+            command: 'build'
+            Dockerfile: '$(dockerfilePath)'
+            buildContext: '$(dockerfileContext)'
+            arguments: '$(dockerBuildArgs)'
+            tags: '$(commitHash)'
+        - task: Docker@2
+          displayName: Push Docker image
+          inputs:
+            containerRegistry: '$(dockerRegistryServiceConnection)'
+            repository: '$(imageName)'
+            command: 'push'
+            tags: '$(commitHash)'
+
+  - stage: CommitTagUpdates
+    displayName: 'Commit Tag Updates'
+    dependsOn: buildPushApp
+    condition: succeeded()
+    jobs:
+      - job: Main
+        pool: { name: $(agentPool) }
+        steps:
+        - checkout: self
+          persistCredentials: true
+        - task: Bash@3
+          displayName: 'Install yq $(yqVersion)'
+          inputs:
+            targetType: inline
+            script: |
+              YQ_URL="https://github.com/mikefarah/yq/releases/download/$(yqVersion)/yq_linux_amd64"
+              sudo wget -qO /usr/local/bin/yq "$YQ_URL"
+              sudo chmod +x /usr/local/bin/yq
+              yq --version
+        - task: Bash@3
+          displayName: 'Update image tag in values'
+          inputs:
+            targetType: inline
+            script: |
+              sourceVersion=$(Build.SourceVersion)
+              commitHash="sha-"${sourceVersion:0:7}
+              git config user.name "Zakeke DevOps Agent"
+              git config user.email "devops-agent@zakeke.com"
+              git fetch origin $(Build.SourceBranchName)
+              git checkout origin/$(Build.SourceBranchName) -B $(Build.SourceBranchName)
+              VALUES_FILE="$(System.DefaultWorkingDirectory)/.helm/values-${{ parameters.environment }}.yaml"
+
+              yq -i ".image.tag = \"$commitHash\"" "$VALUES_FILE"
+
+              git add .helm/values-${{ parameters.environment }}.yaml
+              git diff --cached --quiet && exit 0
+              git commit -m "cd: update tag to $commitHash [skip ci]"
+              for attempt in 1 2 3; do
+                echo "Attempt $attempt: pushing..."
+                if git push origin $(Build.SourceBranchName); then
+                  echo "Push succeeded on attempt $attempt"
+                  exit 0
+                fi
+                echo "Attempt $attempt failed, re-fetching and rebasing..."
+                git fetch origin $(Build.SourceBranchName)
+                git rebase origin/$(Build.SourceBranchName) || {
+                  git rebase --abort 2>/dev/null || true
+                  rm -rf .git/rebase-merge .git/rebase-apply
+                  echo "Rebase conflict on attempt $attempt, retrying..."
+                }
+                sleep 2
+              done
+              echo "Failed to push after 3 attempts"
+              exit 1
+
+  - stage: deploy
+    displayName: 'Deploy ${{ parameters.projectName }} (${{ parameters.environment }})'
+    dependsOn: CommitTagUpdates
+    condition: and(eq('${{ parameters.deploy }}', 'true'), succeeded())
+    jobs:
+      - ${{ each dep in parameters.dependencies }}:
+        - job: dep_${{ replace(dep.name, '-', '_') }}
+          displayName: 'Deploy dependency: ${{ dep.name }}'
+          pool: { name: $(agentPool) }
+          steps:
+          - checkout: self
+          - task: KubectlInstaller@0
+            inputs: { kubectlVersion: 'latest' }
+          - task: HelmInstaller@1
+            inputs: { helmVersionToInstall: latest }
+          - task: AzureCLI@2
+            displayName: 'Login to ACR'
+            inputs:
+              azureSubscription: 'Subscription BizSpark'
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                username="00000000-0000-0000-0000-000000000000"
+                password=$(az acr login --name zakekeaks --expose-token --output tsv --query accessToken)
+                helm registry login zakekeaks.azurecr.io --username $username --password $password
+          - ${{ if eq(parameters.environment, 'staging') }}:
+            - task: HelmDeploy@1
+              displayName: 'Helm Deploy ${{ dep.name }} - Staging'
+              inputs:
+                connectionType: 'Kubernetes Service Connection'
+                kubernetesServiceConnection: admin@zakeke
+                namespace: '$(appNamespace)'
+                command: upgrade
+                install: true
+                chartName: '${{ dep.chart }}'
+                chartVersion: '${{ dep.version }}'
+                releaseName: '${{ dep.name }}'
+                valueFile: '$(System.DefaultWorkingDirectory)/${{ dep.valuesFile }}'
+                arguments: '--create-namespace --rollback-on-failure --wait --timeout ${{ parameters.helmTimeout }}'
+          - ${{ if eq(parameters.environment, 'prod') }}:
+            - task: HelmDeploy@1
+              displayName: 'Helm Deploy ${{ dep.name }} - Prod'
+              inputs:
+                azureSubscription: 'Subscription BizSpark'
+                azureResourceGroup: 'zakeke-prod-ms'
+                kubernetesCluster: 'prod-aks'
+                namespace: '$(appNamespace)'
+                command: upgrade
+                install: true
+                chartName: '${{ dep.chart }}'
+                chartVersion: '${{ dep.version }}'
+                releaseName: '${{ dep.name }}'
+                valueFile: '$(System.DefaultWorkingDirectory)/${{ dep.valuesFile }}'
+                arguments: '--create-namespace --rollback-on-failure --wait --timeout ${{ parameters.helmTimeout }}'
+
+      - job: deploy_app
+        displayName: 'Deploy ${{ parameters.projectName }}'
+        dependsOn:
+          - ${{ each dep in parameters.dependencies }}:
+            - dep_${{ replace(dep.name, '-', '_') }}
+        pool: { name: $(agentPool) }
+        workspace: { clean: all }
+        steps:
+        - checkout: self
+          persistCredentials: true
+        - script: git pull origin $(Build.SourceBranchName)
+        - task: KubectlInstaller@0
+          inputs: { kubectlVersion: 'latest' }
+        - task: HelmInstaller@1
+          inputs: { helmVersionToInstall: latest }
+        - task: AzureCLI@2
+          displayName: 'Login to ACR'
+          inputs:
+            azureSubscription: 'Subscription BizSpark'
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              username="00000000-0000-0000-0000-000000000000"
+              password=$(az acr login --name zakekeaks --expose-token --output tsv --query accessToken)
+              helm registry login zakekeaks.azurecr.io --username $username --password $password
+        - ${{ if eq(parameters.environment, 'staging') }}:
+          - task: HelmDeploy@1
+            displayName: 'Helm Diff $(releaseName) - Staging'
+            inputs:
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceConnection: 'admin@zakeke'
+              namespace: '$(appNamespace)'
+              command: 'upgrade'
+              chartType: 'Name'
+              chartName: 'oci://zakekeaks.azurecr.io/helm/one-tier-app'
+              chartVersion: '${{ parameters.helmChartVersion }}'
+              releaseName: '$(releaseName)'
+              valueFile: '$(System.DefaultWorkingDirectory)/.helm/values-staging.yaml'
+              arguments: '--dry-run=client --debug --wait --timeout ${{ parameters.helmTimeout }}'
+          - task: HelmDeploy@1
+            displayName: 'Helm Deploy $(releaseName) - Staging'
+            inputs:
+              connectionType: 'Kubernetes Service Connection'
+              kubernetesServiceConnection: admin@zakeke
+              namespace: '$(appNamespace)'
+              command: upgrade
+              install: true
+              chartName: 'oci://zakekeaks.azurecr.io/helm/one-tier-app'
+              chartVersion: '${{ parameters.helmChartVersion }}'
+              releaseName: '$(releaseName)'
+              valueFile: '$(System.DefaultWorkingDirectory)/.helm/values-staging.yaml'
+              arguments: '--create-namespace --rollback-on-failure --wait --timeout ${{ parameters.helmTimeout }}'
+        - ${{ if eq(parameters.environment, 'prod') }}:
+          - task: HelmDeploy@1
+            displayName: 'Helm Diff $(releaseName) - Prod'
+            inputs:
+              azureSubscription: 'Subscription BizSpark'
+              azureResourceGroup: 'zakeke-prod-ms'
+              kubernetesCluster: 'prod-aks'
+              namespace: '$(appNamespace)'
+              command: 'upgrade'
+              chartType: 'Name'
+              chartName: 'oci://zakekeaks.azurecr.io/helm/one-tier-app'
+              chartVersion: '${{ parameters.helmChartVersion }}'
+              releaseName: '$(releaseName)'
+              valueFile: '$(System.DefaultWorkingDirectory)/.helm/values-prod.yaml'
+              arguments: '--dry-run=client --debug --wait --timeout ${{ parameters.helmTimeout }}'
+          - task: HelmDeploy@1
+            displayName: 'Helm Deploy $(releaseName) - Prod'
+            inputs:
+              azureSubscription: 'Subscription BizSpark'
+              azureResourceGroup: 'zakeke-prod-ms'
+              kubernetesCluster: 'prod-aks'
+              namespace: '$(appNamespace)'
+              command: upgrade
+              install: true
+              chartName: 'oci://zakekeaks.azurecr.io/helm/one-tier-app'
+              chartVersion: '${{ parameters.helmChartVersion }}'
+              releaseName: '$(releaseName)'
+              valueFile: '$(System.DefaultWorkingDirectory)/.helm/values-prod.yaml'
+              arguments: '--create-namespace --rollback-on-failure --wait --timeout ${{ parameters.helmTimeout }}'
+        - script: |
+            kubectl rollout status deployment -l app.kubernetes.io/instance=$(releaseName) \
+              -n $(appNamespace) --timeout=300s
+          displayName: 'Verify rollout status'
