@@ -2,16 +2,13 @@
 # Il server Node serve sia le API sia la UI statica: singolo tier.
 
 environment: staging
-
 # Singleton obbligatorio: la history SQLite sta su un volume ReadWriteOnce.
 # Due pod sullo stesso file = corruzione, e il secondo non potrebbe attaccare il PVC.
 replicaCount: 1
-
 image:
   repository: zakekeaks.azurecr.io/embroidery-lab
-  tag: latest # riscritto dalla pipeline a sha-<commit>
+  tag: sha-afaf1a9 # riscritto dalla pipeline a sha-<commit>
   pullPolicy: IfNotPresent
-
 deployment:
   # Recreate, non RollingUpdate: un pod di surge non riuscirebbe ad attaccare
   # il PVC RWO ancora tenuto dal vecchio pod e il rollout andrebbe in deadlock.
@@ -62,12 +59,12 @@ deployment:
     - envKey: ZSK_WEB_API_KEY
       secret: embroidery-lab-secrets
       secretKey: Zsk--WebApiKey
-    # ZSK_ACE_TOKEN non e' cablato: il token ACE non e' ancora disponibile e Azure Key Vault
-    # non accetta valori vuoti. Cablarlo verso una chiave inesistente bloccherebbe
-    # l'ExternalSecret e quindi l'avvio del pod. ZSK risulta `unavailable` con
-    # missing=[ZSK_ACE_TOKEN], che e' il comportamento corretto.
-    # Quando il token arriva: creare embroiderylab-Zsk--AceToken in KV e ripristinare
-    # questa voce piu' la corrispondente in externalSecret.keys.
+      # ZSK_ACE_TOKEN non e' cablato: il token ACE non e' ancora disponibile e Azure Key Vault
+      # non accetta valori vuoti. Cablarlo verso una chiave inesistente bloccherebbe
+      # l'ExternalSecret e quindi l'avvio del pod. ZSK risulta `unavailable` con
+      # missing=[ZSK_ACE_TOKEN], che e' il comportamento corretto.
+      # Quando il token arriva: creare embroiderylab-Zsk--AceToken in KV e ripristinare
+      # questa voce piu' la corrispondente in externalSecret.keys.
   volumes:
     - name: data
       claimName: embroidery-lab-data
@@ -87,14 +84,12 @@ deployment:
     - name: data
       mountPath: /app/source-originals # originali pre-normalizzazione
       subPath: source-originals
-
 # uid/gid 1000 = utente `node` dell'immagine. fsGroup rende il volume Longhorn
 # scrivibile dal processo non-root: senza, l'app non puo' scrivere sul PVC.
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 1000
   fsGroup: 1000
-
 persistence:
   volumeClaims:
     - enabled: true
@@ -105,14 +100,12 @@ persistence:
       # storageClass default del cluster, 3 repliche: il volume si riattacca
       # su un altro nodo se quello corrente cade (rilevante per un singleton RWO).
       storageClass: longhorn
-
 service:
   enabled: true
   port: 80
   containerPort: 8080
   protocol: TCP
   type: ClusterIP
-
 ingress:
   enabled: true
   # ingressClassName: vuoto, derivato da environment (staging -> traefik)
@@ -127,7 +120,6 @@ ingress:
     - secretName: embroiderylab-zakeke-me-tls
       hosts:
         - embroiderylab.zakeke.me
-
 healthCheck:
   livenessProbe:
     enabled: true
@@ -143,7 +135,6 @@ healthCheck:
     enabled: true
     path: /health
     failureThreshold: 12
-
 # Profilo "API pesante": sharp fa resize/encode delle sorgenti in-process.
 resources:
   enabled: true
@@ -153,7 +144,6 @@ resources:
   limits:
     cpu: 1000m
     memory: 1Gi
-
 externalSecret:
   enabled: true
   refreshInterval: "1h"
@@ -171,8 +161,7 @@ externalSecret:
       remoteKey: embroiderylab-Zsk--WebApiBaseUrl
     - secretKey: Zsk--WebApiKey
       remoteKey: embroiderylab-Zsk--WebApiKey
-    # Zsk--AceToken assente di proposito: vedi commento in deployment.envSecretKeys.
-
+  # Zsk--AceToken assente di proposito: vedi commento in deployment.envSecretKeys.
 tests:
   enabled: true
   path: /health
