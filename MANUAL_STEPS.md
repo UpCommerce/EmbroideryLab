@@ -4,31 +4,59 @@ Deploy su `zakeke-staging` (Talos on-prem), chart `one-tier-app v2.0.0`, release
 
 > **Mai committare valori reali di secret/API key in questo file.** Solo nomi e fonti.
 
-## Pre-deploy: Secrets su Azure Key Vault
+## Pre-deploy: Secrets su Azure Key Vault — FATTO
 
-Vault staging: `testing-ms.vault.azure.net`.
+Vault staging: `testing-ms.vault.azure.net` (e' il `vaultUrl` del `ClusterSecretStore/azure-keyvault`).
 
-| Chiave Key Vault | Env var nel pod | Descrizione | Fonte |
+| Chiave Key Vault | Env var nel pod | Descrizione | Stato |
 | --- | --- | --- | --- |
-| `embroiderylab-Wilcom--AppId` | `WILCOM_EWA_APP_ID` | App ID Wilcom EWA | Portale developer Wilcom / 1Password |
-| `embroiderylab-Wilcom--AppKey` | `WILCOM_EWA_APP_KEY` | App Key Wilcom EWA | Portale developer Wilcom / 1Password |
-| `embroiderylab-Melco--ApiKey` | `MELCO_CLOUD_API_KEY` | API key Melco Cloud | Melco Cloud console (l'ambiente della key deve combaciare con `MELCO_CLOUD_API_BASE_URL` nei values) |
-| `embroiderylab-Zsk--WebApiBaseUrl` | `ZSK_WEB_API_BASE_URL` | Base URL Web API ZSK | Fornito da ZSK con la licenza ACE (non ha default pubblico) |
-| `embroiderylab-Zsk--WebApiKey` | `ZSK_WEB_API_KEY` | API key Web API ZSK | Fornito da ZSK con la licenza ACE |
-| `embroiderylab-Zsk--AceToken` | `ZSK_ACE_TOKEN` | Token licenza ACE | Fornito da ZSK con la licenza ACE |
+| `embroiderylab-Wilcom--AppId` | `WILCOM_EWA_APP_ID` | App ID Wilcom EWA | creata |
+| `embroiderylab-Wilcom--AppKey` | `WILCOM_EWA_APP_KEY` | App Key Wilcom EWA | creata |
+| `embroiderylab-Melco--ApiKey` | `MELCO_CLOUD_API_KEY` | API key Melco Cloud (**sandbox**) | creata |
+| `embroiderylab-Zsk--WebApiBaseUrl` | `ZSK_WEB_API_BASE_URL` | Base URL Web API ZSK | creata |
+| `embroiderylab-Zsk--WebApiKey` | `ZSK_WEB_API_KEY` | API key Web API ZSK | creata |
+| `embroiderylab-Zsk--AceToken` | `ZSK_ACE_TOKEN` | Token licenza ACE | **non creata** (valore non ancora disponibile) |
 
 PulseID non ha secret: usa l'endpoint pubblico documentato (`PULSEID_BASE_URL`, gia' nei values).
 
-### Comandi pronti
+> **Melco e' su sandbox.** La API key configurata e' di ambiente sandbox, quindi nei values
+> `MELCO_CLOUD_API_BASE_URL` e' `https://sandbox-apis.melcocloud.com`. La key e' legata
+> all'ambiente che l'ha emessa: passando a una key di produzione va cambiata anche la base URL,
+> altrimenti Melco risponde errore pur risultando `ready`.
 
-Il vault e' `testing-ms` (confermato: e' il `vaultUrl` del `ClusterSecretStore/azure-keyvault`).
-Prerequisito: `az login` (il token scade e va rifatto interattivamente).
+### Stato dei provider con la configurazione attuale
 
-`read -rs` evita che il valore finisca nella history della shell o a video:
+Verificato eseguendo il server con queste credenziali:
+
+| Provider | Stato | Nota |
+| --- | --- | --- |
+| Wilcom | `ready` | |
+| PulseID | `ready` | endpoint pubblico, nessuna credenziale |
+| Melco | `ready` | ambiente sandbox |
+| ZSK | `unavailable` | `missing=[ZSK_ACE_TOKEN]` |
+
+**ZSK resta inutilizzabile finche' non arriva il token ACE**: il codice lo richiede per
+considerare il provider configurato. Poiche' Azure Key Vault non accetta valori vuoti, la chiave
+non e' stata creata e `ZSK_ACE_TOKEN` non e' cablato nei values: cablarlo verso una chiave
+inesistente bloccherebbe l'ExternalSecret e quindi l'avvio del pod.
+
+Quando il token arriva:
 
 ```bash
-az login
-az account set --subscription "Visual Studio Enterprise: BizSpark"
+az keyvault secret set --vault-name testing-ms --name 'embroiderylab-Zsk--AceToken' --value '<token>'
+```
+
+e ripristinare in [.helm/values-staging.yaml](.helm/values-staging.yaml) la voce `ZSK_ACE_TOKEN`
+in `deployment.envSecretKeys` piu' `Zsk--AceToken` in `externalSecret.keys` (i punti sono marcati
+da un commento).
+
+### Rotazione o ricreazione delle chiavi
+
+Le chiavi esistono gia'. Per ruotarne una (es. dopo un'esposizione) o ricrearle da zero,
+`read -rs` evita che il valore finisca a video o nella history della shell:
+
+```bash
+az login   # il token AAD scade periodicamente e va rifatto interattivamente
 
 set_secret() {
   read -rsp "$1 = " v && echo
@@ -37,35 +65,35 @@ set_secret() {
   unset v
 }
 
-# Wilcom
 set_secret 'embroiderylab-Wilcom--AppId'
 set_secret 'embroiderylab-Wilcom--AppKey'
-
-# Melco
 set_secret 'embroiderylab-Melco--ApiKey'
-
-# ZSK - solo se la licenza ACE e' gia' disponibile.
-# Altrimenti NON crearle e rimuovere le voci Zsk-- da .helm/values-staging.yaml
-# (sezioni deployment.envSecretKeys e externalSecret.keys). Vedi il paragrafo sopra.
 set_secret 'embroiderylab-Zsk--WebApiBaseUrl'
 set_secret 'embroiderylab-Zsk--WebApiKey'
-set_secret 'embroiderylab-Zsk--AceToken'
 ```
 
-Verifica che ci siano tutte quelle attese (mostra solo i nomi, non i valori):
+Elenco delle chiavi presenti (solo nomi, nessun valore):
 
 ```bash
-az keyvault secret list --vault-name testing-ms --query "[?starts_with(name,'embroiderylab-')].name" -o tsv
+az keyvault secret list --vault-name testing-ms \
+  --query "[?starts_with(name,'embroiderylab-')].name" -o tsv
 ```
 
-### Provider non ancora licenziati: leggere prima di deployare
+Dopo una rotazione il pod NON prende il nuovo valore da solo: l'ExternalSecret risincronizza
+entro `refreshInterval` (1h), ma senza Reloader il pod continua a usare quello vecchio finche'
+non viene riavviato:
 
-**Tutte e sei le chiavi devono esistere nel Key Vault**, altrimenti l'ExternalSecret non sincronizza, il Secret `embroidery-lab-secrets` non viene creato e il pod resta in `CreateContainerConfigError`. Azure Key Vault **non accetta valori vuoti**, quindi non si puo' "creare la chiave e lasciarla vuota".
+```bash
+kubectl rollout restart deployment -n embroidery-lab embroidery-lab
+```
 
-Per un provider di cui non si hanno ancora le credenziali (tipicamente ZSK), scegliere una delle due:
-
-- **Rimuovere il provider dal deploy** (consigliato): eliminare le sue voci da `deployment.envSecretKeys` **e** da `externalSecret.keys` in [.helm/values-staging.yaml](.helm/values-staging.yaml). L'app rileva le env mancanti e mostra il provider come `unavailable`, che e' il comportamento corretto.
-- **Placeholder in Key Vault**: creare la chiave con un valore fittizio (es. `unset`). Attenzione al lato negativo: l'app considera il provider `ready` perche' le env sono valorizzate, e il fallimento si manifesta solo al momento della conversione con un errore del provider remoto.
+> **Regola generale**: ogni chiave referenziata in `externalSecret.keys` /
+> `deployment.envSecretKeys` **deve esistere** nel Key Vault, altrimenti l'ExternalSecret non
+> sincronizza, il Secret `embroidery-lab-secrets` non viene creato e il pod resta in
+> `CreateContainerConfigError`. Azure Key Vault non accetta valori vuoti: per un provider senza
+> credenziali, la strada corretta e' non cablarlo nei values (come fatto per `ZSK_ACE_TOKEN`),
+> non metterci un placeholder — un placeholder farebbe risultare il provider `ready` per poi
+> fallire alla prima conversione.
 
 ## Pre-deploy: Record DNS — FATTO
 
@@ -110,42 +138,30 @@ Traefik risponde `200` su `:80` e non forza redirect a HTTPS, quindi il forward 
 > che il sito sia raggiungibile, e un certificato in-cluster scaduto non causa di per se' un
 > disservizio. La verifica che conta e' la `curl` dall'esterno.
 
-## Pre-deploy: Pipeline Azure DevOps
+## Pre-deploy: Pipeline Azure DevOps — FATTO
 
-Org `mdavena`, progetto `Zakeke`. Il repo e' su GitHub (`UpCommerce/EmbroideryLab`), come le altre app Zakeke, quindi serve la service connection GitHub gia' usata dagli altri repo `UpCommerce/*`.
+| Campo | Valore |
+| --- | --- |
+| Nome | `UpCommerce.EmbroideryLab` (convenzione `UpCommerce.<App>`) |
+| Id | `201` |
+| Org / progetto | `mdavena` / `Zakeke` |
+| Repo | GitHub `UpCommerce/EmbroideryLab`, branch `main` |
+| YAML | `.azure-devops/build-deploy.yml` |
+| Service connection | `GitHub UpCommerce - g.trematerra` |
 
-```bash
-# ID della service connection GitHub esistente
-az devops service-endpoint list --org https://dev.azure.com/mdavena --project Zakeke \
-  --query "[?type=='github'].{name:name, id:id}" -o table
+Creata con `--skip-first-run`: nessuna build e' ancora partita. La pipeline ha `trigger: none`
+ed e' pensata per essere avviata a mano scegliendo `environment`.
 
-az pipelines create \
-  --org https://dev.azure.com/mdavena --project Zakeke \
-  --name 'EmbroideryLab' \
-  --description 'Build & deploy Embroidery Lab' \
-  --repository https://github.com/UpCommerce/EmbroideryLab \
-  --repository-type github \
-  --branch main \
-  --yml-path .azure-devops/build-deploy.yml \
-  --service-connection <GITHUB_SERVICE_CONNECTION_ID> \
-  --skip-first-run true
-```
-
-> `--skip-first-run true` e' importante: senza, AzDO lancia subito una build. La pipeline ha
-> `trigger: none` ed e' pensata per essere avviata a mano scegliendo `environment`.
-
-**Ordine obbligatorio**: prima le chiavi in Key Vault, poi il primo run. Se il deploy parte con
-le chiavi mancanti, l'ExternalSecret non sincronizza e il pod resta in `CreateContainerConfigError`.
-
-Lo stage `CommitTagUpdates` fa `git push` del tag immagine sul branch: la service connection
-GitHub deve avere permessi di **scrittura** sul repo, altrimenti lo stage fallisce dopo la build.
-
-Primo run:
+Primo run (staging):
 
 ```bash
 az pipelines run --org https://dev.azure.com/mdavena --project Zakeke \
-  --name 'EmbroideryLab' --branch main --parameters environment=staging
+  --name 'UpCommerce.EmbroideryLab' --branch main --parameters environment=staging
 ```
+
+> Lo stage `CommitTagUpdates` fa `git push` del tag immagine sul branch: la service connection
+> GitHub deve avere permessi di **scrittura** sul repo, altrimenti lo stage fallisce dopo la
+> build. Non ancora verificato: si scopre al primo run.
 
 ## Post-deploy: Verifiche
 
