@@ -285,7 +285,10 @@ stages:
               releaseName: '$(releaseName)'
               valueFile: '$(System.DefaultWorkingDirectory)/.helm/values-prod.yaml'
               arguments: '--create-namespace --rollback-on-failure --wait --timeout ${{ parameters.helmTimeout }}'
-        - script: |
-            kubectl rollout status deployment -l app.kubernetes.io/instance=$(releaseName) \
-              -n $(appNamespace) --timeout=300s
-          displayName: 'Verify rollout status'
+        # Nessuno step 'kubectl rollout status' qui: uno `script:` semplice non eredita il
+        # kubeconfig (HelmDeploy@1 lo configura solo per la durata del proprio task), quindi
+        # fallirebbe sempre con "connection to the server localhost:8080 was refused" anche a
+        # deploy riuscito. La verifica e' comunque gia' coperta da `--wait --rollback-on-failure
+        # --timeout` di Helm, che fa fallire lo stage e rollback se il rollout non completa.
+        # Se in futuro servisse un check esplicito fuori da Helm, va fatto con un task che
+        # fornisce le credenziali (es. Kubernetes@1 con la service connection), non con `script:`.
