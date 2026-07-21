@@ -7,7 +7,7 @@ environment: staging
 replicaCount: 1
 image:
   repository: zakekeaks.azurecr.io/embroidery-lab
-  tag: sha-85fc7ee # riscritto dalla pipeline a sha-<commit>
+  tag: sha-1e44c3e # riscritto dalla pipeline a sha-<commit>
   pullPolicy: IfNotPresent
 deployment:
   # Recreate, non RollingUpdate: un pod di surge non riuscirebbe ad attaccare
