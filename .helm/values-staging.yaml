@@ -84,6 +84,9 @@ deployment:
     - name: data
       mountPath: /app/source-originals # originali pre-normalizzazione
       subPath: source-originals
+    - name: data
+      mountPath: /app/reports # report history generati (/api/reports/history), come runs/ vanno persistiti
+      subPath: reports
 # uid/gid 1000 = utente `node` dell'immagine. fsGroup rende il volume Longhorn
 # scrivibile dal processo non-root: senza, l'app non puo' scrivere sul PVC.
 podSecurityContext:

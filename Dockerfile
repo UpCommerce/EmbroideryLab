@@ -20,7 +20,7 @@ COPY public ./public
 
 # Runtime write targets. In-cluster each of these is a PVC subPath mount; the mkdir
 # keeps the image runnable standalone and fixes ownership for the unprivileged user.
-RUN mkdir -p data runs logs source-originals && chown -R node:node /app
+RUN mkdir -p data runs logs source-originals reports && chown -R node:node /app
 
 USER node
 EXPOSE 8080
