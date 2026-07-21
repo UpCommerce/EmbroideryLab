@@ -149,19 +149,31 @@ Traefik risponde `200` su `:80` e non forza redirect a HTTPS, quindi il forward 
 | YAML | `.azure-devops/build-deploy.yml` |
 | Service connection | `GitHub UpCommerce - g.trematerra` |
 
-Creata con `--skip-first-run`: nessuna build e' ancora partita. La pipeline ha `trigger: none`
-ed e' pensata per essere avviata a mano scegliendo `environment`.
+### CI automatica su `main`
 
-Primo run (staging):
+Ogni push su `main` fa **build + deploy automatico su staging** (`trigger` nel YAML, webhook GitHub
+attivo). L'`environment` di default resta `staging`: **prod non viene mai deployato in automatico**.
+
+- `batch: true`: i push si accodano invece di avviare run concorrenti.
+- `paths.exclude` su `**/*.md` e `docs/**`: un commit solo-documentazione non scatena il deploy
+  (con `strategy: Recreate` ogni deploy comporta un breve downtime del singleton).
+- `pr: none`: le PR non fanno build; lo staging si aggiorna solo al merge su `main`.
+- Nessun loop: lo stage `CommitTagUpdates` committa con `[skip ci]`, che Azure DevOps salta.
+
+> **Gotcha Azure DevOps**: il push che *introduce* il `trigger` non lo fa scattare (quando il
+> webhook viene processato le impostazioni erano ancora `none`). Diventa effettivo dal push
+> successivo. Verificato: run `63530`, reason `batchedCI`, partita da sola su push a `main`.
+
+Deploy su **prod** (sempre manuale, esplicito):
 
 ```bash
 az pipelines run --org https://dev.azure.com/mdavena --project Zakeke \
-  --name 'UpCommerce.EmbroideryLab' --branch main --parameters environment=staging
+  --name 'UpCommerce.EmbroideryLab' --branch main --parameters environment=prod
 ```
 
 > Lo stage `CommitTagUpdates` fa `git push` del tag immagine sul branch: la service connection
-> GitHub deve avere permessi di **scrittura** sul repo, altrimenti lo stage fallisce dopo la
-> build. Non ancora verificato: si scopre al primo run.
+> GitHub ha i permessi di **scrittura** (verificato: il commit `cd: update tag ...` viene pushato
+> dalla pipeline).
 
 ## Post-deploy: Verifiche
 
