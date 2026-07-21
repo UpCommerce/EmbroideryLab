@@ -43,7 +43,24 @@ variables:
   - name: yqVersion
     value: 'v4.44.6'
 
-trigger: none
+# CI automatica: ogni push su main fa build + deploy su STAGING (environment default).
+# - environment resta 'staging' di default: PROD non viene mai deployato in automatico,
+#   va lanciato a mano con environment=prod.
+# - batch: true accoda i push invece di avviare run concorrenti sullo stesso branch.
+# - lo stage CommitTagUpdates committa con "[skip ci]", che Azure DevOps salta: nessun loop.
+# - i doc non fanno ripartire il deploy (con strategy Recreate ogni deploy = breve downtime).
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - '**/*.md'
+      - docs/**
+
+# Nessuna build sulle PR: lo staging si aggiorna solo al merge su main.
+pr: none
 
 stages:
   - stage: buildPushApp
