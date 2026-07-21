@@ -35,7 +35,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -352,7 +353,8 @@ label,
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   min-height: 38px;
   padding: 8px 10px;
@@ -360,6 +362,48 @@ select {
   border-radius: 6px;
   background: var(--field);
   color: var(--ink);
+}
+
+textarea {
+  min-height: 132px;
+  resize: vertical;
+  text-transform: none;
+}
+
+.source-type-block {
+  margin-bottom: 14px;
+}
+
+.source-mode-block {
+  display: grid;
+  gap: 14px;
+}
+
+.text-preview-box {
+  min-height: 180px;
+  padding: 18px;
+}
+
+.text-preview-content {
+  max-width: 100%;
+  color: var(--accent);
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.unavailable-note {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid #e0b47e;
+  border-radius: 8px;
+  background: #fff7ec;
+  color: #69410c;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .control-block {
@@ -884,13 +928,29 @@ select {
 }
 
 .comparison-images img,
-.comparison-error {
+.comparison-error,
+.comparison-text-source {
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: contain;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: white;
+}
+
+.comparison-text-source {
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 16px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--accent);
+  background: #fff;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  text-align: center;
 }
 
 .comparison-error {

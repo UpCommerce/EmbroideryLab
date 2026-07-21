@@ -38,16 +38,23 @@ const DEFAULT_PUNCH = {
 export const zskProvider = {
   id: "zsk",
   describe() {
+    const imageMissing = missingConfig();
+    const textMissing = missingTextConfig();
+    const configured = imageMissing.length === 0 || textMissing.length === 0;
     return {
       id: "zsk",
       name: "ZSK ACE",
-      status: isConfigured() ? "ready" : "unavailable",
-      configured: isConfigured(),
+      status: configured ? "ready" : "unavailable",
+      configured,
+      capabilities: {
+        image: { supported: true, configured: imageMissing.length === 0, missing: imageMissing },
+        text: { supported: true, configured: textMissing.length === 0, missing: textMissing },
+      },
       modes: ["trueview", "design"],
-      missing: missingConfig(),
-      reason: isConfigured()
+      missing: configured ? [] : textMissing,
+      reason: configured
         ? null
-        : "Non disponibile: servono endpoint ZSK StitchJob, WebApiLicense e ACEToken ACE.",
+        : "Non disponibile: serve endpoint ZSK StitchJob e WebApiLicense; ACE token serve solo per autodigitize bitmap.",
     };
   },
   async convert(input, options, runDir) {
@@ -190,9 +197,87 @@ export const zskProvider = {
       runFiles,
     };
   },
+  async convertText(source, options, runDir) {
+    mkdirSync(runDir, { recursive: true });
+
+    const mode = options.mode === "design" ? "design" : "trueview";
+    const textOptions = options.text ?? {};
+    const zskOptions = options.zskText ?? {};
+    const designFormat = normalizeTextDesignFormat(options.designFormat ?? zskOptions.designFormat ?? "z00");
+    const sourceInfo = textSourceInfo(source);
+    const files = [];
+    const runFiles = [{ name: "text-source.json", kind: "source-info" }];
+    const requestSummaries = [];
+    let designInfo = null;
+
+    writeFileSync(join(runDir, "text-source.json"), JSON.stringify(sourceInfo, null, 2), "utf8");
+
+    const preview = await postStitchJob({
+      label: "ZSK text preview",
+      payload: buildTextPayload({ requestType: "CreatePNG", source, textOptions, zskOptions, includeTrueView: true }),
+      runDir,
+      requestFileName: "zsk-text-preview-request.json",
+      responseFileName: "zsk-text-preview-response.json",
+      source: sourceInfo,
+      requiresAce: false,
+    });
+
+    requestSummaries.push(preview.summary);
+    runFiles.push(
+      { name: "zsk-text-preview-request.json", kind: "request" },
+      { name: "zsk-text-preview-response.json", kind: "response" }
+    );
+    writeOutputFile({
+      runDir,
+      name: "zsk-text-preview.png",
+      mimeType: "image/png",
+      base64: preview.json.RequestData,
+      kind: "preview",
+      files,
+      runFiles,
+    });
+    designInfo = normalizeDesignInfo(preview.json.Info);
+
+    if (mode === "design") {
+      const requestType = zskTextRequestType(designFormat);
+      const design = await postStitchJob({
+        label: "ZSK text design",
+        payload: buildTextPayload({ requestType, source, textOptions, zskOptions, includeTrueView: false }),
+        runDir,
+        requestFileName: "zsk-text-design-request.json",
+        responseFileName: "zsk-text-design-response.json",
+        source: sourceInfo,
+        requiresAce: false,
+      });
+
+      requestSummaries.push(design.summary);
+      runFiles.push(
+        { name: "zsk-text-design-request.json", kind: "request" },
+        { name: "zsk-text-design-response.json", kind: "response" }
+      );
+      designInfo = normalizeDesignInfo(design.json.Info) ?? designInfo;
+      writeOutputFile({
+        runDir,
+        name: "zsk-text-design." + zskTextOutputExtension(designFormat),
+        mimeType: "application/octet-stream",
+        base64: design.json.RequestData,
+        kind: "design",
+        files,
+        runFiles,
+      });
+    }
+
+    return {
+      provider: "zsk",
+      requestXml: JSON.stringify({ provider: "zsk", service: "webapi-text", requests: requestSummaries }, null, 2),
+      files,
+      designInfo: designInfo ? { ...designInfo, source_type: "text", text: source.text } : { source_type: "text", text: source.text },
+      runFiles,
+    };
+  },
 };
 
-async function postStitchJob({ label, payload, runDir, requestFileName, responseFileName, source }) {
+async function postStitchJob({ label, payload, runDir, requestFileName, responseFileName, source, requiresAce = true }) {
   const requestInfo = {
     provider: "zsk",
     endpoint: configuredEndpoint(),
@@ -204,8 +289,11 @@ async function postStitchJob({ label, payload, runDir, requestFileName, response
 
   const summary = requestInfo;
 
-  if (!isConfigured()) {
-    throw httpError(400, "ZSK ACE non configurata: imposta ZSK_WEB_API_BASE_URL e ZSK_WEB_API_KEY.");
+  const configured = requiresAce ? isConfigured() : isTextConfigured();
+  if (!configured) {
+    throw httpError(400, requiresAce
+      ? "ZSK ACE non configurata: imposta ZSK_WEB_API_BASE_URL, ZSK_WEB_API_KEY e ZSK_ACE_TOKEN."
+      : "ZSK text non configurato: imposta ZSK_WEB_API_BASE_URL e ZSK_WEB_API_KEY.");
   }
 
   const response = await fetch(configuredEndpoint(), {
@@ -230,6 +318,39 @@ async function postStitchJob({ label, payload, runDir, requestFileName, response
   }
 
   return { json, responseText, summary };
+}
+
+function buildTextPayload({ requestType, source, textOptions, zskOptions, includeTrueView }) {
+  const needleColor = hexToRgb(textOptions.threadColor ?? zskOptions.threadColor ?? "#0073cf");
+  const monogram = {
+    Text: source.text.split(/\r?\n/),
+    FontFamily: normalizeOptionalText(zskOptions.fontFamily) || "Arial",
+    FontSizeMM: positiveNumberOrDefault(textOptions.heightMm ?? zskOptions.fontSizeMm, 12, "FontSizeMM"),
+    UsedNeedle: positiveIntegerOrDefault(zskOptions.usedNeedle, 1, "UsedNeedle"),
+    XposMM: numberOrDefault(zskOptions.xPosMm, 0, "XposMM"),
+    YposMM: numberOrDefault(zskOptions.yPosMm, 0, "YposMM"),
+    HorizontalAlignment: integerRangeOrDefault(zskOptions.horizontalAlignment, "1", "HorizontalAlignment", 0, 2),
+    TextBendProcent: integerRangeOrDefault(zskOptions.textBendPercent, "0", "TextBendProcent", -100, 100),
+    TextStitchParameter: enumText(zskOptions.textStitchParameter, new Set(["Default/Custom", "Small", "Big", "Budget", "Premium", "Dense"]), "Premium", "TextStitchParameter"),
+    MonogramStyle: integerRangeOrDefault(zskOptions.monogramStyle, "0", "MonogramStyle", 0, 99),
+  };
+
+  const lineSpacing = parseNumberList(zskOptions.lineSpacing);
+  if (lineSpacing.length > 0) monogram.LineSpacing = lineSpacing;
+
+  return {
+    RequestType: requestType,
+    ...(includeTrueView ? { TrueView: buildTrueView(zskOptions.trueView), PngResolution: positiveIntegerOrDefault(zskOptions.pngResolution, 254, "PngResolution") } : {}),
+    Monograms: [monogram],
+    Needle: [{
+      Red: needleColor.red,
+      Green: needleColor.green,
+      Blue: needleColor.blue,
+      Name: normalizeOptionalText(zskOptions.threadName) || "Thread",
+    }],
+    ServerVersion: 3,
+    WebApiLicense: licenseValue(),
+  };
 }
 
 function buildAcePayload({ requestType, input, pictureType, aceOptions, includeTrueView }) {
@@ -312,8 +433,16 @@ function missingConfig() {
   return ["ZSK_WEB_API_BASE_URL", "ZSK_WEB_API_KEY", "ZSK_ACE_TOKEN"].filter((key) => !process.env[key]);
 }
 
+function missingTextConfig() {
+  return ["ZSK_WEB_API_BASE_URL", "ZSK_WEB_API_KEY"].filter((key) => !process.env[key]);
+}
+
 function isConfigured() {
   return missingConfig().length === 0;
+}
+
+function isTextConfigured() {
+  return missingTextConfig().length === 0;
 }
 
 function authHeaderName() {
@@ -330,14 +459,13 @@ function requestHeaders() {
     "Content-Type": "text/plain; charset=utf-8",
     Accept: "application/json",
   };
-  const header = normalizeOptionalText(process.env.ZSK_WEB_API_AUTH_HEADER);
-  if (header) headers[header] = authHeaderValue();
+  if (process.env.ZSK_WEB_API_KEY) headers[authHeaderName()] = authHeaderValue();
   return headers;
 }
 
 function authDebugInfo() {
   return {
-    header: normalizeOptionalText(process.env.ZSK_WEB_API_AUTH_HEADER) || null,
+    header: authHeaderName(),
     scheme: normalizeOptionalText(process.env.ZSK_WEB_API_AUTH_SCHEME) || null,
     webApiLicenseConfigured: Boolean(process.env.ZSK_WEB_API_KEY),
   };
@@ -365,6 +493,77 @@ function pictureTypeForInput(input) {
   if (mimeType === "image/png") return "PNG";
   if (mimeType === "image/bmp") return "BMP";
   return null;
+}
+
+function normalizeTextDesignFormat(value) {
+  const normalized = String(value).replace(/^\./, "").toLowerCase();
+  if (!["z00", "tc", "dst", "tbf", "dsz"].includes(normalized)) {
+    throw httpError(400, "Formato output ZSK text non supportato: " + value);
+  }
+  return normalized === "tc" ? "z00" : normalized;
+}
+
+function zskTextRequestType(format) {
+  if (format === "dst") return "CreateDST";
+  if (format === "tbf") return "CreateTBF";
+  if (format === "dsz") return "CreateDSZ";
+  return "CreateTC";
+}
+
+function zskTextOutputExtension(format) {
+  return format === "z00" ? "z00" : format;
+}
+
+function textSourceInfo(source) {
+  return {
+    name: source.name,
+    text: source.text,
+    chars: source.text.length,
+    lines: source.text.split(/\r?\n/).length,
+  };
+}
+
+function positiveNumberOrDefault(value, fallback, label) {
+  const number = value === "" || value === undefined || value === null ? fallback : Number(value);
+  if (!Number.isFinite(number) || number <= 0) {
+    throw httpError(400, label + " ZSK non valido");
+  }
+  return number;
+}
+
+function numberOrDefault(value, fallback, label) {
+  const number = value === "" || value === undefined || value === null ? fallback : Number(value);
+  if (!Number.isFinite(number)) {
+    throw httpError(400, label + " ZSK non valido");
+  }
+  return number;
+}
+
+function enumText(value, allowed, fallback, label) {
+  if (value === "" || value === undefined || value === null) return fallback;
+  const text = String(value);
+  if (!allowed.has(text)) throw httpError(400, label + " ZSK non valido");
+  return text;
+}
+
+function parseNumberList(value) {
+  if (Array.isArray(value)) return value.map(Number).filter(Number.isFinite);
+  return String(value || "")
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter(Number.isFinite);
+}
+
+function hexToRgb(value) {
+  const text = String(value || "#0073cf").trim();
+  const match = text.match(/^#?([0-9a-fA-F]{6})$/);
+  if (!match) throw httpError(400, "Thread color ZSK non valido");
+  const hex = match[1];
+  return {
+    red: parseInt(hex.slice(0, 2), 16),
+    green: parseInt(hex.slice(2, 4), 16),
+    blue: parseInt(hex.slice(4, 6), 16),
+  };
 }
 
 function normalizeDesignFormat(value) {

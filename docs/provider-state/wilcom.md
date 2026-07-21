@@ -1,4 +1,4 @@
-﻿# Wilcom state
+# Wilcom state
 
 ## Status
 
@@ -88,3 +88,28 @@ No public numeric limit found for max colors or max regions. Error 151 suggests 
 2. Add per-run complexity metrics: exact/dominant colors, color clusters, alpha, gradient estimate, small regions estimate.
 3. For failing images, run A/B tests: original, palette-reduced 24 colors, palette-reduced 12 colors, removed background, smaller target area.
 4. Save comparison results into history and include the error category in provider evaluation.
+## Wilcom support note: unsuitable image uploads (2022)
+
+Source reviewed: `Wilcom API Support Note - Protect Your Website from Image-uploads Unsuitable for Embroidery.pdf`, dated 3 February 2022.
+
+New documented guidance:
+
+- Best input: logo/emblem artwork with clear boundaries and flat colors, without gradients.
+- Wilcom describes `5-6` colors as a typical upper target for an efficient commercial logo. This is a production recommendation, not a documented API hard limit.
+- Recommended source resolution: about `300 DPI` at the requested physical embroidery size.
+- The AI needs roughly `3 px` of width to recognise a line in the source image. This is an image-recognition guideline, not a minimum sewable stitch width.
+- Very small objects can be removed by AutoDigitizing as noise.
+- Suggested upload area range: `100-22,500 mm2`. The Lab enforces the maximum but does not yet enforce the suggested minimum.
+- Photographs should not be sent to this EWA workflow because it does not use the special techniques required for photo embroidery.
+- Wilcom explicitly recommends filtering unsuitable uploads before the API call to avoid long failures, wasted capacity, API cost, and user frustration.
+
+Development implications:
+
+- Compute effective DPI from source pixels and requested millimetres. Upscaling alone must not be treated as recovered detail.
+- Add preflight warnings for effective DPI below about 300, estimated strokes below 3 px, gradients, micro-regions, and likely photographs.
+- Keep `5-6` colors as a warning/preset and A/B-test target, not as a universal rejection threshold.
+- Add the suggested `100 mm2` minimum-area validation with a clear message.
+- Save preflight metrics and the exact preprocessed image in each run so every frontend option has a real backend effect.
+- For Wilcom 151 experiments, compare original, 24, 12, 8, and 6-color variants while keeping all other request options unchanged.
+
+Standalone Italian translation and analysis: `docs/wilcom-image-upload-support-note-it.html`.

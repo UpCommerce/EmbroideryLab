@@ -2,11 +2,13 @@ const state = {
   providers: [],
   samples: [],
   selectedSampleName: "",
+  sourceType: "image",
   provider: "wilcom",
   mode: "trueview",
   image: null,
   wilcomPaletteEdited: false,
   comparison: {
+    sourceType: "image",
     uploads: [],
     selectedSampleNames: new Set(),
     selectedProviderIds: new Set(),
@@ -58,17 +60,32 @@ const providerFormats = {
   zsk: ["z00", "dst"],
 };
 
+const textProviderFormats = {
+  wilcom: ["emb", "dst", "pes", "exp", "jef"],
+  pulse: ["dst", "pes", "pxf", "tcf", "z00", "pcf"],
+  melco: [],
+  zsk: ["z00", "dst", "tbf", "dsz"],
+};
+
 const els = {
   providerStatus: document.querySelector("#provider-status"),
   historyButton: document.querySelector("#history-button"),
   compareButton: document.querySelector("#compare-button"),
+  reportButton: document.querySelector("#report-button"),
   providerTabs: document.querySelector("#provider-tabs"),
+  sourceTypeButtons: document.querySelectorAll("[data-source-type]"),
   modeButtons: document.querySelectorAll("[data-mode]"),
   fileInput: document.querySelector("#file-input"),
   dropZone: document.querySelector("#drop-zone"),
   fileName: document.querySelector("#file-name"),
-  sampleButton: document.querySelector("#sample-button"),
   sampleGrid: document.querySelector("#sample-grid"),
+  imageSourceBlock: document.querySelector("#image-source-block"),
+  textSourceBlock: document.querySelector("#text-source-block"),
+  textInput: document.querySelector("#text-input"),
+  textName: document.querySelector("#text-name"),
+  textHeightMm: document.querySelector("#text-height-mm"),
+  textThreadColor: document.querySelector("#text-thread-color"),
+  textPreview: document.querySelector("#text-preview"),
   sourceImage: document.querySelector("#source-image"),
   sourceEmpty: document.querySelector("#source-empty"),
   runButton: document.querySelector("#run-button"),
@@ -81,6 +98,14 @@ const els = {
   requestXml: document.querySelector("#request-xml"),
   compareDialog: document.querySelector("#compare-dialog"),
   compareClose: document.querySelector("#compare-close"),
+  compareSourceTypeButtons: document.querySelectorAll("[data-compare-source-type]"),
+  compareImageSourceStep: document.querySelector("#compare-image-source-step"),
+  compareTextSourceStep: document.querySelector("#compare-text-source-step"),
+  compareTextInput: document.querySelector("#compare-text-input"),
+  compareTextName: document.querySelector("#compare-text-name"),
+  compareTextHeightMm: document.querySelector("#compare-text-height-mm"),
+  compareTextThreadColor: document.querySelector("#compare-text-thread-color"),
+  compareImageRunSettings: document.querySelector("#compare-image-run-settings"),
   compareFileInput: document.querySelector("#compare-file-input"),
   compareUploadList: document.querySelector("#compare-upload-list"),
   compareSampleGrid: document.querySelector("#compare-sample-grid"),
@@ -169,7 +194,69 @@ const els = {
   zskMinimumHoleSize: document.querySelector("#zsk-minimum-hole-size"),
   zskMinimumLineLength: document.querySelector("#zsk-minimum-line-length"),
   zskThreadCones: document.querySelector("#zsk-thread-cones"),
-  compareProviderOptions: document.querySelector(".compare-provider-options"),
+  wilcomTextOptions: document.querySelector("#wilcom-text-options"),
+  wilcomTextAlphabet: document.querySelector("#wilcom-text-alphabet"),
+  wilcomTextPreviewMethod: document.querySelector("#wilcom-text-preview-method"),
+  wilcomTextDpi: document.querySelector("#wilcom-text-dpi"),
+  wilcomTextDesignVersionBlock: document.querySelector("#wilcom-text-design-version-block"),
+  wilcomTextDesignVersion: document.querySelector("#wilcom-text-design-version"),
+  wilcomTextBold: document.querySelector("#wilcom-text-bold"),
+  wilcomTextItalic: document.querySelector("#wilcom-text-italic"),
+  wilcomTextWordSpacing: document.querySelector("#wilcom-text-word-spacing"),
+  wilcomTextJustification: document.querySelector("#wilcom-text-justification"),
+  wilcomTextBaseline: document.querySelector("#wilcom-text-baseline"),
+  wilcomTextBaselineRadiusBlock: document.querySelector("#wilcom-text-baseline-radius-block"),
+  wilcomTextBaselineRadius: document.querySelector("#wilcom-text-baseline-radius"),
+  wilcomTextFixedBaselineBlock: document.querySelector("#wilcom-text-fixed-baseline-block"),
+  wilcomTextBaselineLength: document.querySelector("#wilcom-text-baseline-length"),
+  wilcomTextAutoFit: document.querySelector("#wilcom-text-auto-fit"),
+  pulseTextOptions: document.querySelector("#pulse-text-options"),
+  pulseTextType: document.querySelector("#pulse-text-type"),
+  pulseTextFont: document.querySelector("#pulse-text-font"),
+  pulseTextWidthCompression: document.querySelector("#pulse-text-width-compression"),
+  pulseTextJustification: document.querySelector("#pulse-text-justification"),
+  pulseTextEnvelope: document.querySelector("#pulse-text-envelope"),
+  pulseTextNeedle: document.querySelector("#pulse-text-needle"),
+  pulseTextRecipe: document.querySelector("#pulse-text-recipe"),
+  pulseTextMachineFormat: document.querySelector("#pulse-text-machine-format"),
+  pulseTextRemoveUnusedNeedles: document.querySelector("#pulse-text-remove-unused-needles"),
+  pulseTextRainbow: document.querySelector("#pulse-text-rainbow"),
+  pulseTextTransparentPreview: document.querySelector("#pulse-text-transparent-preview"),
+  pulseTextLightenShadows: document.querySelector("#pulse-text-lighten-shadows"),
+  pulseTextRenderWidth: document.querySelector("#pulse-text-render-width"),
+  pulseTextRenderHeight: document.querySelector("#pulse-text-render-height"),
+  pulseTextRenderPadding: document.querySelector("#pulse-text-render-padding"),
+  pulseTextDecorationBlock: document.querySelector("#pulse-text-decoration-block"),
+  pulseTextDecoration: document.querySelector("#pulse-text-decoration"),
+  pulseTextRainbowBlock: document.querySelector("#pulse-text-rainbow-block"),
+  pulseTextRainbowColors: document.querySelector("#pulse-text-rainbow-colors"),
+  pulseTextArcBlock: document.querySelector("#pulse-text-arc-block"),
+  pulseTextX1: document.querySelector("#pulse-text-x1"),
+  pulseTextY1: document.querySelector("#pulse-text-y1"),
+  pulseTextX2: document.querySelector("#pulse-text-x2"),
+  pulseTextY2: document.querySelector("#pulse-text-y2"),
+  pulseTextX3: document.querySelector("#pulse-text-x3"),
+  pulseTextY3: document.querySelector("#pulse-text-y3"),
+  pulseTextCircleBlock: document.querySelector("#pulse-text-circle-block"),
+  pulseTextBottomText: document.querySelector("#pulse-text-bottom-text"),
+  pulseTextCenterX: document.querySelector("#pulse-text-center-x"),
+  pulseTextCenterY: document.querySelector("#pulse-text-center-y"),
+  pulseTextRefX: document.querySelector("#pulse-text-ref-x"),
+  pulseTextRefY: document.querySelector("#pulse-text-ref-y"),
+  melcoTextOptions: document.querySelector("#melco-text-options"),
+  zskTextOptions: document.querySelector("#zsk-text-options"),
+  zskTextFontFamily: document.querySelector("#zsk-text-font-family"),
+  zskTextStitchParameter: document.querySelector("#zsk-text-stitch-parameter"),
+  zskTextUsedNeedle: document.querySelector("#zsk-text-used-needle"),
+  zskTextBend: document.querySelector("#zsk-text-bend"),
+  zskTextAlignment: document.querySelector("#zsk-text-alignment"),
+  zskTextMonogramStyle: document.querySelector("#zsk-text-monogram-style"),
+  zskTextXPos: document.querySelector("#zsk-text-x-pos"),
+  zskTextYPos: document.querySelector("#zsk-text-y-pos"),
+  zskTextLineSpacing: document.querySelector("#zsk-text-line-spacing"),
+  zskTextPngResolution: document.querySelector("#zsk-text-png-resolution"),
+  compareImageProviderOptions: document.querySelector("#compare-image-provider-options"),
+  compareTextProviderOptions: document.querySelector("#compare-text-provider-options"),
   compareSourceMaxSide: document.querySelector("#compare-source-max-side"),
   compareSourceMinSide: document.querySelector("#compare-source-min-side"),
   compareWidthMm: document.querySelector("#compare-width-mm"),
@@ -240,6 +327,45 @@ const els = {
   compareZskMinimumHoleSize: document.querySelector("#compare-zsk-minimum-hole-size"),
   compareZskMinimumLineLength: document.querySelector("#compare-zsk-minimum-line-length"),
   compareZskThreadCones: document.querySelector("#compare-zsk-thread-cones"),
+  compareWilcomTextOptions: document.querySelector("#compare-wilcom-text-options"),
+  compareWilcomTextFormatBlock: document.querySelector("#compare-wilcom-text-format-block"),
+  compareWilcomTextFormat: document.querySelector("#compare-wilcom-text-format"),
+  compareWilcomTextAlphabet: document.querySelector("#compare-wilcom-text-alphabet"),
+  compareWilcomTextPreviewMethod: document.querySelector("#compare-wilcom-text-preview-method"),
+  compareWilcomTextDpi: document.querySelector("#compare-wilcom-text-dpi"),
+  compareWilcomTextBold: document.querySelector("#compare-wilcom-text-bold"),
+  compareWilcomTextItalic: document.querySelector("#compare-wilcom-text-italic"),
+  compareWilcomTextWordSpacing: document.querySelector("#compare-wilcom-text-word-spacing"),
+  compareWilcomTextJustification: document.querySelector("#compare-wilcom-text-justification"),
+  compareWilcomTextBaseline: document.querySelector("#compare-wilcom-text-baseline"),
+  compareWilcomTextBaselineRadiusBlock: document.querySelector("#compare-wilcom-text-baseline-radius-block"),
+  compareWilcomTextBaselineRadius: document.querySelector("#compare-wilcom-text-baseline-radius"),
+  comparePulseTextOptions: document.querySelector("#compare-pulse-text-options"),
+  comparePulseTextFormatBlock: document.querySelector("#compare-pulse-text-format-block"),
+  comparePulseTextFormat: document.querySelector("#compare-pulse-text-format"),
+  comparePulseTextType: document.querySelector("#compare-pulse-text-type"),
+  comparePulseTextFont: document.querySelector("#compare-pulse-text-font"),
+  comparePulseTextWidthCompression: document.querySelector("#compare-pulse-text-width-compression"),
+  comparePulseTextJustification: document.querySelector("#compare-pulse-text-justification"),
+  comparePulseTextEnvelope: document.querySelector("#compare-pulse-text-envelope"),
+  comparePulseTextRecipe: document.querySelector("#compare-pulse-text-recipe"),
+  comparePulseTextMachineFormat: document.querySelector("#compare-pulse-text-machine-format"),
+  comparePulseTextDecorationBlock: document.querySelector("#compare-pulse-text-decoration-block"),
+  comparePulseTextDecoration: document.querySelector("#compare-pulse-text-decoration"),
+  comparePulseTextRemoveUnusedNeedles: document.querySelector("#compare-pulse-text-remove-unused-needles"),
+  comparePulseTextTransparentPreview: document.querySelector("#compare-pulse-text-transparent-preview"),
+  comparePulseTextRenderWidth: document.querySelector("#compare-pulse-text-render-width"),
+  comparePulseTextRenderHeight: document.querySelector("#compare-pulse-text-render-height"),
+  comparePulseTextRenderPadding: document.querySelector("#compare-pulse-text-render-padding"),
+  compareZskTextOptions: document.querySelector("#compare-zsk-text-options"),
+  compareZskTextFormatBlock: document.querySelector("#compare-zsk-text-format-block"),
+  compareZskTextFormat: document.querySelector("#compare-zsk-text-format"),
+  compareZskTextFontFamily: document.querySelector("#compare-zsk-text-font-family"),
+  compareZskTextStitchParameter: document.querySelector("#compare-zsk-text-stitch-parameter"),
+  compareZskTextBend: document.querySelector("#compare-zsk-text-bend"),
+  compareZskTextAlignment: document.querySelector("#compare-zsk-text-alignment"),
+  compareZskTextPngResolution: document.querySelector("#compare-zsk-text-png-resolution"),
+  compareZskTextLineSpacing: document.querySelector("#compare-zsk-text-line-spacing"),
 };
 
 await init();
@@ -251,11 +377,38 @@ async function init() {
   renderFormatOptions();
   renderSwatches();
   renderCompareWilcomSwatches();
+  updateTextPreview();
   await loadSampleImage();
   updateRunState();
 }
 
 function wireEvents() {
+  els.sourceTypeButtons.forEach((button) => {
+    button.addEventListener("click", () => setSourceType(button.dataset.sourceType));
+  });
+
+  els.compareSourceTypeButtons.forEach((button) => {
+    button.addEventListener("click", () => setCompareSourceType(button.dataset.compareSourceType));
+  });
+
+  [els.textInput, els.textName, els.textHeightMm, els.textThreadColor].forEach((control) => {
+    control.addEventListener("input", () => {
+      updateTextPreview();
+      updateRunState();
+    });
+  });
+
+  [els.compareTextInput, els.compareTextName, els.compareTextHeightMm, els.compareTextThreadColor].forEach((control) => {
+    control.addEventListener("input", updateCompareRunState);
+  });
+
+  els.wilcomTextBaseline.addEventListener("change", renderProviderOptions);
+  els.pulseTextType.addEventListener("change", renderProviderOptions);
+  els.pulseTextRainbow.addEventListener("change", renderProviderOptions);
+  els.compareWilcomTextBaseline.addEventListener("change", renderCompareProviderOptions);
+  els.compareWilcomTextFormat.addEventListener("change", renderCompareProviderOptions);
+  els.comparePulseTextType.addEventListener("change", renderCompareProviderOptions);
+
   els.fileInput.addEventListener("change", () => {
     const [file] = els.fileInput.files;
     if (file) {
@@ -283,10 +436,6 @@ function wireEvents() {
     }
   });
 
-  els.sampleButton.addEventListener("click", async () => {
-    await loadSampleImage(currentSample());
-  });
-
   els.modeButtons.forEach((button) => {
     button.addEventListener("click", () => {
       state.mode = button.dataset.mode;
@@ -305,6 +454,7 @@ function wireEvents() {
   els.historyButton.addEventListener("click", openHistoryDialog);
   els.historyClose.addEventListener("click", closeHistoryDialog);
   els.compareButton.addEventListener("click", openCompareDialog);
+  els.reportButton.addEventListener("click", createHistoryReport);
   els.compareClose.addEventListener("click", closeCompareDialog);
   els.compareFileInput.addEventListener("change", handleCompareUploads);
   els.compareMode.addEventListener("change", () => {
@@ -375,10 +525,7 @@ async function loadProviders() {
   const response = await fetch("/api/providers");
   const data = await response.json();
   state.providers = data.providers ?? [];
-  const current = currentProvider();
-  if (!current || current.status !== "ready") {
-    state.provider = state.providers.find((provider) => provider.status === "ready")?.id ?? state.provider;
-  }
+  ensureProviderForSource();
   renderProviders();
 }
 
@@ -399,7 +546,7 @@ function renderProviders() {
     button.type = "button";
     button.className = "provider-tab";
     button.textContent = provider.name;
-    button.disabled = provider.status !== "ready";
+    button.disabled = !providerAvailableForSource(provider);
     button.classList.toggle("active", provider.id === state.provider);
     button.addEventListener("click", () => {
       state.provider = provider.id;
@@ -412,9 +559,30 @@ function renderProviders() {
   }
 
   const current = currentProvider();
-  const suffix =
-    current?.status === "ready" ? "ready" : current?.reason || "not available";
-  els.providerStatus.textContent = `${current?.name ?? "Provider"} - ${suffix}`;
+  const suffix = providerStatusForSource(current);
+  els.providerStatus.textContent = (current?.name ?? "Provider") + " - " + suffix;
+}
+
+function setSourceType(type) {
+  state.sourceType = type === "text" ? "text" : "image";
+  els.sourceTypeButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.sourceType === state.sourceType);
+  });
+  ensureProviderForSource();
+  renderProviders();
+  renderFormatOptions();
+  clearResult();
+  updateTextPreview();
+  updateRunState();
+}
+
+function updateTextPreview() {
+  const text = els.textInput.value || "No text";
+  els.textPreview.textContent = text;
+  els.textPreview.style.color = els.textThreadColor.value || "#0073cf";
+  const height = Number(els.textHeightMm.value);
+  const previewSize = Number.isFinite(height) ? Math.max(18, Math.min(48, height * 2.1)) : 26;
+  els.textPreview.style.fontSize = previewSize + "px";
 }
 
 async function setImageFile(file) {
@@ -531,19 +699,22 @@ function renderCompareProviders() {
   if (!els.compareProviderList) return;
   els.compareProviderList.replaceChildren();
 
-  const readyProviders = state.providers.filter((provider) => provider.status === "ready");
-  if (state.comparison.selectedProviderIds.size === 0) {
+  const sourceType = state.comparison.sourceType;
+  const readyProviders = state.providers.filter((provider) => providerAvailableForSource(provider, sourceType));
+  const hasSelectedReadyProvider = readyProviders.some((provider) => state.comparison.selectedProviderIds.has(provider.id));
+  if (!hasSelectedReadyProvider) {
     readyProviders.forEach((provider) => state.comparison.selectedProviderIds.add(provider.id));
   }
 
   for (const provider of state.providers) {
+    const available = providerAvailableForSource(provider, sourceType);
     const label = document.createElement("label");
     label.className = "compare-provider-option";
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.value = provider.id;
-    checkbox.disabled = provider.status !== "ready";
-    checkbox.checked = provider.status === "ready" && state.comparison.selectedProviderIds.has(provider.id);
+    checkbox.disabled = !available;
+    checkbox.checked = available && state.comparison.selectedProviderIds.has(provider.id);
     checkbox.addEventListener("change", () => {
       if (checkbox.checked) {
         state.comparison.selectedProviderIds.add(provider.id);
@@ -557,7 +728,7 @@ function renderCompareProviders() {
     const name = document.createElement("span");
     name.textContent = provider.name;
     const status = document.createElement("small");
-    status.textContent = provider.status === "ready" ? "ready" : provider.reason || "unavailable";
+    status.textContent = available ? "ready" : providerStatusForSource(provider, sourceType);
     label.append(checkbox, name, status);
     els.compareProviderList.append(label);
   }
@@ -566,41 +737,63 @@ function renderCompareProviders() {
 
 function renderCompareProviderOptions() {
   const selectedIds = new Set(selectedCompareProviderIds());
+  const isText = state.comparison.sourceType === "text";
   const isDesign = els.compareMode.value === "design";
   const hasSelectedProvider = selectedIds.size > 0;
 
-  els.compareProviderOptions.hidden = !hasSelectedProvider;
-  els.compareWilcomOptions.hidden = !selectedIds.has("wilcom");
-  els.comparePulseOptions.hidden = !selectedIds.has("pulse");
-  els.compareMelcoOptions.hidden = !selectedIds.has("melco");
-  els.compareZskOptions.hidden = !selectedIds.has("zsk");
+  els.compareImageSourceStep.hidden = isText;
+  els.compareTextSourceStep.hidden = !isText;
+  els.compareImageRunSettings.hidden = isText;
+  els.compareImageProviderOptions.hidden = isText || !hasSelectedProvider;
+  els.compareTextProviderOptions.hidden = !isText || !hasSelectedProvider;
+
+  els.compareWilcomOptions.hidden = isText || !selectedIds.has("wilcom");
+  els.comparePulseOptions.hidden = isText || !selectedIds.has("pulse");
+  els.compareMelcoOptions.hidden = isText || !selectedIds.has("melco");
+  els.compareZskOptions.hidden = isText || !selectedIds.has("zsk");
+
+  els.compareWilcomTextOptions.hidden = !isText || !selectedIds.has("wilcom");
+  els.comparePulseTextOptions.hidden = !isText || !selectedIds.has("pulse");
+  els.compareZskTextOptions.hidden = !isText || !selectedIds.has("zsk");
 
   els.compareWilcomFormatBlock.hidden = !isDesign;
   els.comparePulseFormatBlock.hidden = !isDesign || els.comparePulseRunType.value !== "full";
   els.compareMelcoFormatBlock.hidden = !isDesign;
   els.compareZskFormatBlock.hidden = !isDesign;
-  els.compareWilcomDesignVersionBlock.hidden =
-    !isDesign || els.compareWilcomFormat.value !== "emb";
+  els.compareWilcomDesignVersionBlock.hidden = !isDesign || els.compareWilcomFormat.value !== "emb";
   els.compareWilcomPaletteBlock.hidden = els.compareWilcomColorSource.value !== "palette";
   els.compareWilcomThreadChartBlock.hidden = els.compareWilcomColorSource.value !== "threadChart";
+
+  els.compareWilcomTextFormatBlock.hidden = !isDesign;
+  els.comparePulseTextFormatBlock.hidden = !isDesign;
+  els.compareZskTextFormatBlock.hidden = !isDesign;
+  const baseline = els.compareWilcomTextBaseline.value;
+  els.compareWilcomTextBaselineRadiusBlock.hidden = !(baseline === "circle_cw" || baseline === "circle_ccw");
+  els.comparePulseTextDecorationBlock.hidden = els.comparePulseTextType.value !== "ltMonogram";
 }
 
-
 async function runConversion() {
-  if (!state.image) return;
+  if (!currentSourceReady()) return;
 
+  const isText = state.sourceType === "text";
   setStatus("Running", "neutral");
   els.runButton.disabled = true;
   clearResult();
 
   try {
-    const payload = {
-      provider: state.provider,
-      image: state.image,
-      options: buildOptionsForProvider(state.provider, state.mode),
-    };
+    const payload = isText
+      ? {
+          provider: state.provider,
+          source: readTextSource(),
+          options: buildTextOptionsForProvider(state.provider, state.mode),
+        }
+      : {
+          provider: state.provider,
+          image: state.image,
+          options: buildOptionsForProvider(state.provider, state.mode),
+        };
 
-    const response = await fetch("/api/convert", {
+    const response = await fetch(isText ? "/api/convert-text" : "/api/convert", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -658,25 +851,49 @@ function openResultPreview() {
 }
 
 async function openCompareDialog() {
-  if (state.selectedSampleName && state.comparison.selectedSampleNames.size === 0 && state.comparison.uploads.length === 0) {
+  state.comparison.sourceType = state.sourceType;
+  if (
+    state.comparison.sourceType === "image" &&
+    state.selectedSampleName &&
+    state.comparison.selectedSampleNames.size === 0 &&
+    state.comparison.uploads.length === 0
+  ) {
     state.comparison.selectedSampleNames.add(state.selectedSampleName);
   }
 
   state.comparison.mode = state.mode;
   els.compareMode.value = state.comparison.mode;
   syncCompareCommonSettingsFromMain();
+  syncCompareTextSettingsFromMain();
+  els.compareSourceTypeButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.compareSourceType === state.comparison.sourceType);
+  });
   renderCompareSamples();
   renderCompareProviders();
   updateCompareRunState();
   setCompareStatus("Idle", "neutral");
   state.comparison.wilcomPaletteEdited = false;
-  await populateComparePaletteFromSelection();
+  if (state.comparison.sourceType === "image") await populateComparePaletteFromSelection();
 
   if (typeof els.compareDialog.showModal === "function") {
     els.compareDialog.showModal();
   } else {
     els.compareDialog.setAttribute("open", "");
   }
+}
+
+async function setCompareSourceType(sourceType) {
+  state.comparison.sourceType = sourceType === "text" ? "text" : "image";
+  state.providers
+    .filter((provider) => providerAvailableForSource(provider, state.comparison.sourceType))
+    .forEach((provider) => state.comparison.selectedProviderIds.add(provider.id));
+  els.compareSourceTypeButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.compareSourceType === state.comparison.sourceType);
+  });
+  renderCompareProviders();
+  updateCompareRunState();
+  setCompareStatus("Idle", "neutral");
+  if (state.comparison.sourceType === "image") await populateComparePaletteFromSelection();
 }
 
 function closeCompareDialog() {
@@ -713,6 +930,33 @@ async function openHistoryDialog() {
   await loadHistory();
 }
 
+async function createHistoryReport() {
+  const previousText = els.reportButton.textContent;
+  els.reportButton.disabled = true;
+  els.reportButton.textContent = "Creating...";
+  setStatus("Generating history report", "");
+
+  try {
+    const response = await fetch("/api/reports/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
+    const data = await readJsonResponse(response, "History report endpoint");
+    if (!response.ok) throw new Error(data.error || "Cannot create report");
+
+    const url = data.report?.url;
+    if (!url) throw new Error("Report URL missing");
+
+    setStatus(`Report created: ${data.report.fileName || url}`, "ok");
+    window.open(url, "_blank", "noopener");
+  } catch (error) {
+    setStatus(error.message || "Cannot create report", "error");
+  } finally {
+    els.reportButton.disabled = false;
+    els.reportButton.textContent = previousText;
+  }
+}
 function closeHistoryDialog() {
   if (typeof els.historyDialog.close === "function") {
     els.historyDialog.close();
@@ -776,12 +1020,14 @@ function renderHistoryCompares(compareGroups) {
 function renderSavedCompareHistoryItem(compare) {
   const item = document.createElement("details");
   item.className = "history-item history-accordion";
+  const isTextCompare = (compare.title || "").toLowerCase().startsWith("text ");
+  const sourceLabel = isTextCompare ? "Text sources" : "Images";
   item.innerHTML = `
     <summary>
       <div>
         <strong>${escapeHtml(compare.title || "Comparison")}</strong>
         <span>${escapeHtml(formatDateTime(compare.createdAt))} / ${escapeHtml(compare.mode || "unknown mode")}</span>
-        <small>${compare.successCount}/${compare.totalCount} successful / ${compare.imageCount} images / ${compare.providerCount} providers / saved compare</small>
+        <small>${compare.successCount}/${compare.totalCount} successful / ${compare.imageCount} ${sourceLabel.toLowerCase()} / ${compare.providerCount} providers / saved compare</small>
       </div>
     </summary>
     <div class="history-detail">
@@ -791,7 +1037,7 @@ function renderSavedCompareHistoryItem(compare) {
         <button class="ghost-button" type="button" data-history-action="html">Download HTML</button>
       </div>
       <div class="history-request-grid">
-        ${historyFact("Images", compare.imageCount)}
+        ${historyFact(sourceLabel, compare.imageCount)}
         ${historyFact("Providers", compare.providerCount)}
         ${historyFact("Mode", compare.mode || "unknown")}
         ${historyFact("Success", `${compare.successCount}/${compare.totalCount}`)}
@@ -1085,6 +1331,10 @@ async function openHistoricalCompare(id) {
   const compare = data.compare;
   state.comparison.mode = compare.mode || "trueview";
   state.comparison.results = compare.results ?? [];
+  state.comparison.sourceType =
+    compare.sourceType ||
+    state.comparison.results[0]?.sourceType ||
+    (state.comparison.results[0]?.image?.text ? "text" : "image");
   renderComparisonResults(compare.totalCount ?? state.comparison.results.length);
   els.comparisonRecapButton.hidden = state.comparison.results.length === 0;
   els.comparisonHtmlRecapButton.hidden = state.comparison.results.length === 0;
@@ -1116,6 +1366,7 @@ async function saveComparisonHistory(title) {
       body: JSON.stringify({
         title,
         mode: state.comparison.mode,
+        sourceType: state.comparison.sourceType,
         results: state.comparison.results.map(historyResult),
       }),
     });
@@ -1132,8 +1383,10 @@ function historyResult(result) {
     variantName: result.variantName,
     variantKey: result.variantKey,
     variantValue: result.variantValue,
+    sourceType: result.sourceType ?? (result.image?.text ? "text" : "image"),
     image: {
       name: result.image?.name ?? "",
+      text: result.image?.text,
     },
     mode: result.mode,
     options: result.options,
@@ -1170,9 +1423,12 @@ function renderCompareUploads() {
 }
 
 function updateCompareRunState() {
-  const imageCount = state.comparison.uploads.length + state.comparison.selectedSampleNames.size;
+  const sourceCount =
+    state.comparison.sourceType === "text"
+      ? (els.compareTextInput.value.trim() ? 1 : 0)
+      : state.comparison.uploads.length + state.comparison.selectedSampleNames.size;
   const providerCount = selectedCompareProviderIds().length;
-  els.compareRunButton.disabled = imageCount === 0 || providerCount === 0;
+  els.compareRunButton.disabled = sourceCount === 0 || providerCount === 0;
 }
 
 function syncCompareCommonSettingsFromMain() {
@@ -1182,20 +1438,30 @@ function syncCompareCommonSettingsFromMain() {
   els.compareHeightMm.value = els.heightMm.value;
 }
 
+function syncCompareTextSettingsFromMain() {
+  if (state.sourceType === "text") {
+    els.compareTextInput.value = els.textInput.value;
+    els.compareTextName.value = els.textName.value || "text-comparison";
+    els.compareTextHeightMm.value = els.textHeightMm.value;
+    els.compareTextThreadColor.value = els.textThreadColor.value;
+  }
+}
+
 function selectedCompareProviderIds() {
   return Array.from(state.comparison.selectedProviderIds).filter((id) => {
     const provider = state.providers.find((item) => item.id === id);
-    return provider?.status === "ready";
+    return providerAvailableForSource(provider, state.comparison.sourceType);
   });
 }
 
 async function runComparison() {
-  const images = await collectCompareImages();
+  const sourceType = state.comparison.sourceType;
+  const sources = sourceType === "text" ? [readCompareTextSource()] : await collectCompareImages();
   const providerIds = selectedCompareProviderIds();
   const mode = els.compareMode.value;
-  const total = images.length * providerIds.length;
+  const total = sources.length * providerIds.length;
 
-  if (total === 0) return;
+  if (total === 0 || (sourceType === "text" && !sources[0].text)) return;
 
   state.comparison.mode = mode;
   state.comparison.results = [];
@@ -1205,22 +1471,25 @@ async function runComparison() {
   els.comparisonHtmlRecapButton.hidden = true;
 
   let completed = 0;
-  for (const image of images) {
+  for (const source of sources) {
     for (const providerId of providerIds) {
       const provider = state.providers.find((item) => item.id === providerId);
-      setCompareStatus(`Running ${provider?.name ?? providerId} / ${image.name} (${completed + 1}/${total})`, "neutral");
-      const result = await runComparisonItem(image, providerId, mode);
+      setCompareStatus("Running " + (provider?.name ?? providerId) + " / " + source.name + " (" + (completed + 1) + "/" + total + ")", "neutral");
+      const result =
+        sourceType === "text"
+          ? await runTextComparisonItem(source, providerId, mode)
+          : await runComparisonItem(source, providerId, mode);
       state.comparison.results.push(result);
       completed += 1;
       renderComparisonResults(total);
     }
   }
 
-  setCompareStatus(`Complete (${completed}/${total})`, "ok");
+  setCompareStatus("Complete (" + completed + "/" + total + ")", "ok");
   els.compareRunButton.disabled = false;
   els.comparisonRecapButton.hidden = state.comparison.results.length === 0;
   els.comparisonHtmlRecapButton.hidden = state.comparison.results.length === 0;
-  await saveComparisonHistory("Provider comparison");
+  await saveComparisonHistory(sourceType === "text" ? "Text provider comparison" : "Provider comparison");
   closeCompareDialog();
   openComparisonDialog();
 }
@@ -1301,6 +1570,7 @@ async function runComparisonItem(image, providerId, mode, overrides = {}) {
       variantKey: overrides.variantKey,
       variantValue: overrides.variantValue,
       image,
+      sourceType: "image",
       mode,
       options,
       data,
@@ -1314,6 +1584,48 @@ async function runComparisonItem(image, providerId, mode, overrides = {}) {
       variantKey: overrides.variantKey,
       variantValue: overrides.variantValue,
       image,
+      sourceType: "image",
+      mode,
+      options,
+      error: error.message || "Conversion failed",
+      runId: error.runId,
+      logFile: error.logFile,
+      upstreamResponse: error.upstreamResponse,
+    };
+  }
+}
+
+async function runTextComparisonItem(source, providerId, mode) {
+  const provider = state.providers.find((item) => item.id === providerId);
+  const options = buildCompareTextOptionsForProvider(providerId, mode);
+  const image = { name: source.name, text: source.text };
+
+  try {
+    const response = await fetch("/api/convert-text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider: providerId, source, options }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw conversionErrorFromResponse(data);
+
+    return {
+      ok: true,
+      providerId,
+      providerName: provider?.name ?? providerId,
+      image,
+      sourceType: "text",
+      mode,
+      options,
+      data,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      providerId,
+      providerName: provider?.name ?? providerId,
+      image,
+      sourceType: "text",
       mode,
       options,
       error: error.message || "Conversion failed",
@@ -1335,6 +1647,99 @@ function buildPulseThreadTypeComparisonOptions(mode, threadType) {
       ...pulseDefaultOptions,
       threadType,
     },
+  });
+}
+
+function buildTextOptionsForProvider(providerId, mode) {
+  const formats = formatsForProvider(providerId, "text");
+  const selectedFormat = formats.includes(els.designFormat.value) ? els.designFormat.value : formats[0];
+  return stripEmpty({
+    mode,
+    sourceType: "text",
+    designFormat: mode === "design" && selectedFormat ? selectedFormat : undefined,
+    text: readTextCommonOptions(),
+    wilcomText: providerId === "wilcom" ? readWilcomTextOptions() : undefined,
+    pulseText: providerId === "pulse" ? readPulseTextOptions() : undefined,
+    zskText: providerId === "zsk" ? readZskTextOptions() : undefined,
+  });
+}
+
+function readCompareTextSource() {
+  return {
+    name: els.compareTextName.value.trim() || "text-comparison",
+    text: els.compareTextInput.value.trim(),
+  };
+}
+
+function buildCompareTextOptionsForProvider(providerId, mode) {
+  const selectedFormat = mode === "design" ? compareTextDesignFormat(providerId) : undefined;
+  return stripEmpty({
+    mode,
+    sourceType: "text",
+    designFormat: selectedFormat,
+    text: stripEmpty({
+      heightMm: els.compareTextHeightMm.value,
+      threadColor: els.compareTextThreadColor.value,
+    }),
+    wilcomText: providerId === "wilcom" ? readCompareWilcomTextOptions() : undefined,
+    pulseText: providerId === "pulse" ? readComparePulseTextOptions() : undefined,
+    zskText: providerId === "zsk" ? readCompareZskTextOptions() : undefined,
+  });
+}
+
+function compareTextDesignFormat(providerId) {
+  const formats = textProviderFormats[providerId] ?? [];
+  const select = {
+    wilcom: els.compareWilcomTextFormat,
+    pulse: els.comparePulseTextFormat,
+    zsk: els.compareZskTextFormat,
+  }[providerId];
+  const value = select?.value;
+  return formats.includes(value) ? value : formats[0];
+}
+
+function readCompareWilcomTextOptions() {
+  const baseline = els.compareWilcomTextBaseline.value;
+  return stripEmpty({
+    alphabetName: els.compareWilcomTextAlphabet.value,
+    previewMethod: els.compareWilcomTextPreviewMethod.value,
+    dpi: els.compareWilcomTextDpi.value,
+    bold: els.compareWilcomTextBold.checked,
+    italic: els.compareWilcomTextItalic.checked,
+    wordSpacing: els.compareWilcomTextWordSpacing.value,
+    justification: els.compareWilcomTextJustification.value,
+    baseline,
+    baselineRadius: baseline === "circle_cw" || baseline === "circle_ccw" ? els.compareWilcomTextBaselineRadius.value : undefined,
+  });
+}
+
+function readComparePulseTextOptions() {
+  const type = els.comparePulseTextType.value;
+  return stripEmpty({
+    type,
+    font: els.comparePulseTextFont.value,
+    widthCompression: els.comparePulseTextWidthCompression.value,
+    justification: els.comparePulseTextJustification.value,
+    envelope: els.comparePulseTextEnvelope.value,
+    recipe: els.comparePulseTextRecipe.value,
+    machineFormat: els.comparePulseTextMachineFormat.value,
+    removeUnusedNeedles: els.comparePulseTextRemoveUnusedNeedles.checked,
+    transparentPreview: els.comparePulseTextTransparentPreview.checked,
+    renderWidth: els.comparePulseTextRenderWidth.value,
+    renderHeight: els.comparePulseTextRenderHeight.value,
+    renderPadding: els.comparePulseTextRenderPadding.value,
+    decoration: type === "ltMonogram" ? els.comparePulseTextDecoration.value : undefined,
+  });
+}
+
+function readCompareZskTextOptions() {
+  return stripEmpty({
+    fontFamily: els.compareZskTextFontFamily.value,
+    textStitchParameter: els.compareZskTextStitchParameter.value,
+    textBendPercent: els.compareZskTextBend.value,
+    horizontalAlignment: els.compareZskTextAlignment.value,
+    pngResolution: els.compareZskTextPngResolution.value,
+    lineSpacing: els.compareZskTextLineSpacing.value,
   });
 }
 
@@ -1526,6 +1931,7 @@ function renderComparisonResults(total = state.comparison.results.length) {
     const displayName = result.variantName
       ? `${result.providerName} - ${result.variantName}`
       : result.providerName;
+    const sourceLabel = result.image?.text ? result.image.text.replace(/\s+/g, " ").slice(0, 90) : result.image.name;
 
     const preview = result.ok ? previewFile(result.data?.files ?? []) : null;
     const previewUrl = previewUrlForResult(result);
@@ -1539,7 +1945,7 @@ function renderComparisonResults(total = state.comparison.results.length) {
     card.innerHTML = `
       <div class="comparison-card-head">
         <strong>${escapeHtml(displayName)}</strong>
-        <span>${escapeHtml(result.image.name)}</span>
+        <span>${escapeHtml(sourceLabel)}</span>
       </div>
       <div class="comparison-images">
         ${sourcePreviewHtml(result.image, result)}
@@ -1560,6 +1966,9 @@ function previewFile(files) {
 }
 
 function sourcePreviewHtml(image, result = undefined) {
+  if (image?.text !== undefined) {
+    return '<pre class="comparison-text-source">' + escapeHtml(image.text) + "</pre>";
+  }
   const sourceUrl = result ? sourceUrlForResult(result) : "";
   if (sourceUrl) return `<img src="${escapeHtml(sourceUrl)}" alt="">`;
   if (isImageDataUrl(image.dataUrl)) return `<img src="${image.dataUrl}" alt="">`;
@@ -1567,6 +1976,9 @@ function sourcePreviewHtml(image, result = undefined) {
 }
 
 function sourceMarkdown(image, width) {
+  if (image?.text !== undefined) {
+    return '<pre style="width:' + width + 'px;max-width:' + width + 'px;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid #d7d4cd;border-radius:6px;background:#fff;padding:12px;font-family:Arial,sans-serif;font-size:14px;">' + htmlEscape(image.text) + "</pre>";
+  }
   if (isImageDataUrl(image.dataUrl)) {
     return `<img src="${image.dataUrl}" width="${width}" style="max-width:${width}px;height:auto;border:1px solid #d7d4cd;border-radius:6px;background:#fff;" />`;
   }
@@ -1615,6 +2027,7 @@ function buildComparisonMarkdown() {
     "# Embroidery comparison",
     "",
     `Generated: ${new Date().toISOString()}`,
+    `Source type: ${state.comparison.sourceType}`,
     `Mode: ${state.comparison.mode}`,
     "",
   ];
@@ -1682,6 +2095,7 @@ function buildComparisonHtml() {
       .source { display: grid; grid-template-columns: minmax(220px, 320px) 1fr; gap: 16px; align-items: start; }
       .source img, .preview img, .placeholder { width: 100%; max-height: 260px; object-fit: contain; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
       .placeholder { display: grid; min-height: 180px; place-items: center; padding: 14px; color: var(--muted); text-align: center; }
+      .comparison-text-source { display: grid; width: 100%; min-height: 180px; margin: 0; place-items: center; padding: 18px; white-space: pre-wrap; overflow-wrap: anywhere; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--accent); font: 700 22px/1.35 Georgia, "Times New Roman", serif; text-align: center; }
       .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
       article { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: #fffefa; }
       article.error { border-color: #d8a39d; }
@@ -1703,7 +2117,7 @@ function buildComparisonHtml() {
   <body>
     <header>
       <h1>Embroidery comparison</h1>
-      <div class="meta">Generated: ${htmlEscape(generated)} | Mode: ${htmlEscape(state.comparison.mode)}</div>
+      <div class="meta">Generated: ${htmlEscape(generated)} | Source: ${htmlEscape(state.comparison.sourceType)} | Mode: ${htmlEscape(state.comparison.mode)}</div>
     </header>
     <main>
       ${sections || "<section><h2>No results</h2></section>"}
@@ -1797,9 +2211,11 @@ function groupComparisonResultsByImage() {
   const groups = new Map();
   for (const result of state.comparison.results) {
     const imageName = result.image?.name ?? "source";
-    const imageKey = result.image?.dataUrl
-      ? result.image.dataUrl.slice(0, 80)
-      : imageName;
+    const imageKey = result.image?.text
+      ? result.image.text
+      : result.image?.dataUrl
+        ? result.image.dataUrl.slice(0, 80)
+        : imageName;
     const key = `${imageName}|${imageKey}`;
     if (!groups.has(key)) {
       groups.set(key, { image: result.image, results: [] });
@@ -1982,24 +2398,51 @@ function clearResult() {
 function updateRunState() {
   const current = currentProvider();
   const pulseProvider = state.providers.find((provider) => provider.id === "pulse");
-  els.runButton.disabled = !state.image || !current || current.status !== "ready";
-  els.pulseThreadTypeCompareButton.disabled = !state.image || pulseProvider?.status !== "ready";
+  els.runButton.disabled = !currentSourceReady() || !providerAvailableForSource(current);
+  const hasCompareProvider = state.providers.some((provider) => providerAvailableForSource(provider, state.sourceType));
+  els.compareButton.disabled = !hasCompareProvider;
+  els.compareButton.title = hasCompareProvider ? "" : "No configured provider supports this source type.";
+  els.pulseThreadTypeCompareButton.disabled =
+    state.sourceType !== "image" || !state.image || !providerAvailableForSource(pulseProvider, "image");
   renderProviderOptions();
 }
 
 function renderProviderOptions() {
-  els.wilcomOptions.hidden = state.provider !== "wilcom";
-  els.pulseOptions.hidden = state.provider !== "pulse";
-  els.melcoOptions.hidden = state.provider !== "melco";
-  els.zskOptions.hidden = state.provider !== "zsk";
-  els.targetSizeRow.hidden = !providerUsesTargetSize(state.provider);
+  const isText = state.sourceType === "text";
+  const formats = formatsForProvider(state.provider);
+  els.imageSourceBlock.hidden = isText;
+  els.textSourceBlock.hidden = !isText;
+
+  els.wilcomOptions.hidden = isText || state.provider !== "wilcom";
+  els.pulseOptions.hidden = isText || state.provider !== "pulse";
+  els.melcoOptions.hidden = isText || state.provider !== "melco";
+  els.zskOptions.hidden = isText || state.provider !== "zsk";
+
+  els.wilcomTextOptions.hidden = !isText || state.provider !== "wilcom";
+  els.pulseTextOptions.hidden = !isText || state.provider !== "pulse";
+  els.melcoTextOptions.hidden = !isText || state.provider !== "melco";
+  els.zskTextOptions.hidden = !isText || state.provider !== "zsk";
+
+  els.targetSizeRow.hidden = isText || !providerUsesTargetSize(state.provider);
   els.formatBlock.hidden =
-    state.mode !== "design" || (state.provider === "pulse" && els.pulseRunType.value !== "full");
+    state.mode !== "design" || formats.length === 0 || (!isText && state.provider === "pulse" && els.pulseRunType.value !== "full");
   els.removeBackgroundToggle.hidden = state.provider !== "wilcom";
-  els.threadPaletteBlock.hidden = state.provider !== "wilcom" || els.wilcomColorSource.value !== "palette";
-  els.wilcomThreadChartBlock.hidden = state.provider !== "wilcom" || els.wilcomColorSource.value !== "threadChart";
+  els.threadPaletteBlock.hidden = isText || state.provider !== "wilcom" || els.wilcomColorSource.value !== "palette";
+  els.wilcomThreadChartBlock.hidden = isText || state.provider !== "wilcom" || els.wilcomColorSource.value !== "threadChart";
   els.wilcomDesignVersionBlock.hidden =
-    state.provider !== "wilcom" || state.mode !== "design" || els.designFormat.value !== "emb";
+    isText || state.provider !== "wilcom" || state.mode !== "design" || els.designFormat.value !== "emb";
+  els.wilcomTextDesignVersionBlock.hidden =
+    !isText || state.provider !== "wilcom" || state.mode !== "design" || els.designFormat.value !== "emb";
+
+  const wilcomBaseline = els.wilcomTextBaseline.value;
+  els.wilcomTextBaselineRadiusBlock.hidden = !(wilcomBaseline === "circle_cw" || wilcomBaseline === "circle_ccw");
+  els.wilcomTextFixedBaselineBlock.hidden = !(wilcomBaseline === "horizontal_fixed" || wilcomBaseline === "vertical_fixed");
+
+  const pulseType = els.pulseTextType.value;
+  els.pulseTextDecorationBlock.hidden = pulseType !== "ltMonogram";
+  els.pulseTextArcBlock.hidden = pulseType !== "ltArc";
+  els.pulseTextCircleBlock.hidden = pulseType !== "ltCircle";
+  els.pulseTextRainbowBlock.hidden = !els.pulseTextRainbow.checked;
 }
 
 function providerUsesTargetSize(providerId, providerOptions = undefined) {
@@ -2030,7 +2473,7 @@ function providerProducesDesignFile(providerId, providerOptions = undefined) {
 
 function renderFormatOptions() {
   const currentValue = els.designFormat.value;
-  const formats = providerFormats[state.provider] ?? ["dst"];
+  const formats = formatsForProvider(state.provider);
   els.designFormat.replaceChildren(
     ...formats.map((format) => {
       const option = document.createElement("option");
@@ -2039,13 +2482,60 @@ function renderFormatOptions() {
       return option;
     })
   );
-  els.designFormat.value = formats.includes(currentValue) ? currentValue : formats[0];
+  if (formats.length > 0) {
+    els.designFormat.value = formats.includes(currentValue) ? currentValue : formats[0];
+  }
 }
 
 function setStatus(message, type) {
   els.statusBox.textContent = message;
   els.statusBox.classList.toggle("error", type === "error");
   els.statusBox.classList.toggle("ok", type === "ok");
+}
+
+function formatsForProvider(providerId, sourceType = state.sourceType) {
+  const sourceFormats = sourceType === "text" ? textProviderFormats : providerFormats;
+  return sourceFormats[providerId] ?? ["dst"];
+}
+
+function ensureProviderForSource() {
+  const current = currentProvider();
+  if (providerAvailableForSource(current)) return;
+  const next = state.providers.find((provider) => providerAvailableForSource(provider));
+  if (next) state.provider = next.id;
+}
+
+function providerAvailableForSource(provider, sourceType = state.sourceType) {
+  if (!provider) return false;
+  const capability = provider.capabilities?.[sourceType];
+  if (capability) return capability.supported !== false && capability.configured !== false && provider.status === "ready";
+  return provider.status === "ready";
+}
+
+function providerStatusForSource(provider, sourceType = state.sourceType) {
+  if (!provider) return "not available";
+  const capability = provider.capabilities?.[sourceType];
+  if (capability) {
+    if (capability.supported === false) return capability.reason || "not supported for " + sourceType;
+    if (capability.configured === false) {
+      const missing = Array.isArray(capability.missing) && capability.missing.length ? ": " + capability.missing.join(", ") : "";
+      return (capability.reason || "not configured") + missing;
+    }
+  }
+  return provider.status === "ready" ? "ready" : provider.reason || "not available";
+}
+
+function currentSourceReady() {
+  if (state.sourceType === "text") return Boolean(els.textInput.value.trim());
+  return Boolean(state.image);
+}
+
+function readTextSource() {
+  const name = els.textName.value.trim() || "lettering";
+  return {
+    name,
+    text: els.textInput.value.trim(),
+  };
 }
 
 function currentProvider() {
@@ -2257,6 +2747,81 @@ function rgbToHex(red, green, blue) {
     .map((channel) => Math.max(0, Math.min(255, channel)).toString(16).padStart(2, "0"))
     .join("")
     .toUpperCase()}`;
+}
+
+function readTextCommonOptions() {
+  return stripEmpty({
+    heightMm: els.textHeightMm.value,
+    threadColor: els.textThreadColor.value,
+  });
+}
+
+function readWilcomTextOptions() {
+  return stripEmpty({
+    alphabetName: els.wilcomTextAlphabet.value,
+    previewMethod: els.wilcomTextPreviewMethod.value,
+    dpi: els.wilcomTextDpi.value,
+    designVersion:
+      state.mode === "design" && els.designFormat.value === "emb"
+        ? els.wilcomTextDesignVersion.value
+        : undefined,
+    bold: els.wilcomTextBold.checked,
+    italic: els.wilcomTextItalic.checked,
+    wordSpacing: els.wilcomTextWordSpacing.value,
+    justification: els.wilcomTextJustification.value,
+    baseline: els.wilcomTextBaseline.value,
+    baselineRadius: els.wilcomTextBaselineRadius.value,
+    baselineLength: els.wilcomTextBaselineLength.value,
+    autoFitMode: els.wilcomTextAutoFit.value,
+  });
+}
+
+function readPulseTextOptions() {
+  return stripEmpty({
+    type: els.pulseTextType.value,
+    font: els.pulseTextFont.value,
+    widthCompression: els.pulseTextWidthCompression.value,
+    justification: els.pulseTextJustification.value,
+    envelope: els.pulseTextEnvelope.value,
+    needle: els.pulseTextNeedle.value,
+    recipe: els.pulseTextRecipe.value,
+    machineFormat: els.pulseTextMachineFormat.value,
+    removeUnusedNeedles: els.pulseTextRemoveUnusedNeedles.checked,
+    isRainbowText: els.pulseTextRainbow.checked,
+    rainbowColors: els.pulseTextRainbow.checked ? els.pulseTextRainbowColors.value : undefined,
+    transparentPreview: els.pulseTextTransparentPreview.checked,
+    lightenShadows: els.pulseTextLightenShadows.checked,
+    renderWidth: els.pulseTextRenderWidth.value,
+    renderHeight: els.pulseTextRenderHeight.value,
+    renderPadding: els.pulseTextRenderPadding.value,
+    decoration: els.pulseTextType.value === "ltMonogram" ? els.pulseTextDecoration.value : undefined,
+    x1: els.pulseTextType.value === "ltArc" ? els.pulseTextX1.value : undefined,
+    y1: els.pulseTextType.value === "ltArc" ? els.pulseTextY1.value : undefined,
+    x2: els.pulseTextType.value === "ltArc" ? els.pulseTextX2.value : undefined,
+    y2: els.pulseTextType.value === "ltArc" ? els.pulseTextY2.value : undefined,
+    x3: els.pulseTextType.value === "ltArc" ? els.pulseTextX3.value : undefined,
+    y3: els.pulseTextType.value === "ltArc" ? els.pulseTextY3.value : undefined,
+    bottomText: els.pulseTextType.value === "ltCircle" ? els.pulseTextBottomText.value : undefined,
+    centerX: els.pulseTextType.value === "ltCircle" ? els.pulseTextCenterX.value : undefined,
+    centerY: els.pulseTextType.value === "ltCircle" ? els.pulseTextCenterY.value : undefined,
+    refX: els.pulseTextType.value === "ltCircle" ? els.pulseTextRefX.value : undefined,
+    refY: els.pulseTextType.value === "ltCircle" ? els.pulseTextRefY.value : undefined,
+  });
+}
+
+function readZskTextOptions() {
+  return stripEmpty({
+    fontFamily: els.zskTextFontFamily.value,
+    textStitchParameter: els.zskTextStitchParameter.value,
+    usedNeedle: els.zskTextUsedNeedle.value,
+    textBendPercent: els.zskTextBend.value,
+    horizontalAlignment: els.zskTextAlignment.value,
+    monogramStyle: els.zskTextMonogramStyle.value,
+    xPosMm: els.zskTextXPos.value,
+    yPosMm: els.zskTextYPos.value,
+    lineSpacing: els.zskTextLineSpacing.value,
+    pngResolution: els.zskTextPngResolution.value,
+  });
 }
 
 function readWilcomOptions({ ignoreSelectedProvider = false } = {}) {
@@ -2473,4 +3038,5 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
 

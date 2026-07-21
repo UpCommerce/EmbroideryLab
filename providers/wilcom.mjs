@@ -26,6 +26,10 @@ export const wilcomProvider = {
       name: "Wilcom EWA",
       status: isConfigured() ? "ready" : "unavailable",
       configured: isConfigured(),
+      capabilities: {
+        image: { supported: true, configured: isConfigured(), missing: missingCredentials() },
+        text: { supported: true, configured: isConfigured(), missing: missingCredentials() },
+      },
       modes: ["trueview", "design"],
       missing: missingCredentials(),
       reason: isConfigured()
@@ -165,6 +169,105 @@ export const wilcomProvider = {
       runFiles,
     };
   },
+  async convertText(source, options, runDir) {
+    mkdirSync(runDir, { recursive: true });
+
+    const mode = options.mode === "design" ? "design" : "trueview";
+    const textOptions = options.text ?? {};
+    const wilcomOptions = options.wilcomText ?? {};
+    const designFormat = normalizeDesignFormat(options.designFormat ?? "emb");
+    const designVersion = normalizeDesignVersion(wilcomOptions.designVersion, designFormat);
+    const trueviewFileName = "trueview.png";
+    const designFileName = "text-design." + designFormat;
+    const method = mode === "design" ? "newDesign" : normalizeWilcomPreviewMethod(wilcomOptions.previewMethod);
+    const requestXml = buildTextRequestXml({
+      source,
+      textOptions,
+      wilcomOptions,
+      mode,
+      trueviewFileName,
+      designFileName,
+      designVersion,
+      widthMm: positiveNumberOrUndefined(options.widthMm),
+      heightMm: positiveNumberOrUndefined(options.heightMm),
+    });
+    validateRequestXmlSize(requestXml);
+
+    const sourceInfo = textSourceInfo(source);
+    writeFileSync(join(runDir, "text-source.json"), JSON.stringify(sourceInfo, null, 2), "utf8");
+    writeFileSync(join(runDir, "wilcom-text-request.xml"), requestXml, "utf8");
+
+    if (!isConfigured()) {
+      throw httpError(400, "Wilcom lettering non disponibile: mancano account/API key EWA.");
+    }
+
+    const baseUrl = (process.env.WILCOM_EWA_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/+$/, "");
+    const requestBody = new URLSearchParams({
+      appId: process.env.WILCOM_EWA_APP_ID,
+      appKey: process.env.WILCOM_EWA_APP_KEY,
+      requestXml,
+    });
+    const response = await fetch(baseUrl + "/api/" + method, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: requestBody,
+    });
+
+    const responseXml = await response.text();
+    writeFileSync(join(runDir, "wilcom-text-response.xml"), responseXml, "utf8");
+    const errorInfo = parseFirstTagAttributes(responseXml, "error_info");
+
+    if (!response.ok) {
+      throw httpError(response.status, wilcomErrorMessage(response.status, errorInfo), {
+        errorInfo,
+        responseBody: responseXml,
+        responseXml,
+      });
+    }
+
+    if (errorInfo) {
+      throw httpError(400, wilcomErrorMessage(400, errorInfo), {
+        errorInfo,
+        responseBody: responseXml,
+        responseXml,
+      });
+    }
+
+    const files = [];
+    const runFiles = [
+      { name: "text-source.json", kind: "source-info" },
+      { name: "wilcom-text-request.xml", kind: "request" },
+      { name: "wilcom-text-response.xml", kind: "response" },
+    ];
+
+    for (const file of parseFileEntries(responseXml)) {
+      if (!file.filename || !file.filecontents) continue;
+
+      const safeName = sanitizeFileName(file.filename);
+      writeFileSync(join(runDir, safeName), Buffer.from(file.filecontents, "base64"));
+      files.push({
+        name: safeName,
+        mimeType: inferMimeType(safeName),
+        base64: file.filecontents,
+      });
+      runFiles.push({ name: safeName, kind: safeName.toLowerCase().endsWith(".png") ? "preview" : "design" });
+    }
+
+    const designInfo = parseFirstTagAttributes(responseXml, "design_info");
+    if (designInfo) {
+      writeFileSync(join(runDir, "design-info.json"), JSON.stringify(designInfo, null, 2), "utf8");
+      runFiles.push({ name: "design-info.json", kind: "metadata" });
+    }
+
+    return {
+      provider: "wilcom",
+      requestXml,
+      responseXml,
+      files,
+      designInfo: designInfo ? { ...designInfo, source_type: "text", text: source.text } : { source_type: "text", text: source.text },
+      runFiles,
+    };
+  },
 };
 
 function buildRequestXml({
@@ -223,6 +326,86 @@ function buildRequestXml({
     "</xml>",
     "",
   ].join("\n");
+}
+
+function buildTextRequestXml({
+  source,
+  textOptions,
+  wilcomOptions,
+  mode,
+  trueviewFileName,
+  designFileName,
+  designVersion,
+  widthMm,
+  heightMm,
+}) {
+  const alphabetName = normalizeOptionalText(wilcomOptions.alphabetName) || "Block2";
+  const textHeightMm = numberRangeOrDefault(textOptions.heightMm ?? wilcomOptions.heightMm, 12, 5, 50, "Wilcom text height");
+  const baseline = enumText(
+    wilcomOptions.baseline,
+    new Set(["horizontal", "vertical", "circle_cw", "circle_ccw", "horizontal_fixed", "vertical_fixed"]),
+    "horizontal",
+    "Wilcom baseline"
+  );
+  const justification = enumText(
+    wilcomOptions.justification,
+    new Set(["left", "right", "centre", "fit"]),
+    "centre",
+    "Wilcom justification"
+  );
+  const autoFitMode = enumText(
+    wilcomOptions.autoFitMode,
+    new Set(["spacing", "letter", "letter_prop", "whole", "whole_prop"]),
+    "spacing",
+    "Wilcom auto fit"
+  );
+  const thread = parseThreads([textOptions.threadColor ?? wilcomOptions.threadColor ?? "#0073cf"])[0];
+  const simpleAttrs = [
+    ["text", xmlTextAttr(source.text)],
+    ["alphabet_name", xmlAttr(alphabetName)],
+    ["height", textHeightMm],
+    ["bold", boolXml(wilcomOptions.bold, false)],
+    ["italic", boolXml(wilcomOptions.italic, false)],
+    ["word_spacing", numberRangeOrDefault(wilcomOptions.wordSpacing, 0.6, 0, 5, "Wilcom word spacing")],
+    ["justification", justification],
+    ["baseline", baseline],
+  ];
+
+  if (baseline === "circle_cw" || baseline === "circle_ccw") {
+    simpleAttrs.push(["baseline_radius", numberRangeOrDefault(wilcomOptions.baselineRadius, 50, 20, 1000, "Wilcom baseline radius")]);
+  }
+
+  if (baseline === "horizontal_fixed" || baseline === "vertical_fixed") {
+    simpleAttrs.push(["baseline_length", numberRangeOrDefault(wilcomOptions.baselineLength, 100, 20, 1000, "Wilcom baseline length")]);
+    simpleAttrs.push(["auto_fit_mode", autoFitMode]);
+  }
+
+  const outputAttrs = [
+    "trueview_file=\"" + xmlAttr(trueviewFileName) + "\"",
+    mode === "design" ? "design_file=\"" + xmlAttr(designFileName) + "\"" : "",
+    designVersion ? "design_version=\"" + xmlAttr(designVersion) + "\"" : "",
+    "dpi=\"" + xmlAttr(String(positiveIntegerOrDefault(wilcomOptions.dpi ?? 160, 160))) + "\"",
+  ].filter(Boolean).join(" ");
+  const location = widthMm && heightMm
+    ? "    <location width=\"" + xmlAttr(widthMm) + "\" height=\"" + xmlAttr(heightMm) + "\" />"
+    : "";
+
+  return [
+    '<?xml version="1.0" encoding="utf-8"?>',
+    "<xml>",
+    "  <recipe>",
+    location,
+    "    <decorations>",
+    "      <lettering>",
+    "        <simple_lettering " + simpleAttrs.map(([key, value]) => key + "=\"" + value + "\"").join(" ") + " />",
+    "        <thread color=\"" + thread.rgbInt + "\" code=\"1\" brand=\"Embroidery Lab\" description=\"" + xmlAttr(thread.hex) + "\" />",
+    "      </lettering>",
+    "    </decorations>",
+    "    <output " + outputAttrs + " />",
+    "  </recipe>",
+    "</xml>",
+    "",
+  ].filter((line) => line !== "").join("\n");
 }
 
 async function prepareWilcomInput({ input, sourceKind, wilcomOptions, runDir }) {
@@ -440,6 +623,49 @@ function normalizeDesignFormat(value) {
     throw httpError(400, "Formato file ricamo non valido");
   }
   return normalized;
+}
+
+function normalizeWilcomPreviewMethod(value) {
+  if (value === "trueview") return "newDesignTrueview";
+  return "newLetteringPreview";
+}
+
+function enumText(value, allowed, fallback, label) {
+  if (value === "" || value === undefined || value === null) return fallback;
+  const text = String(value);
+  if (!allowed.has(text)) throw httpError(400, label + " non valido: " + text);
+  return text;
+}
+
+function boolXml(value, fallback) {
+  if (value === "" || value === undefined || value === null) return fallback ? "true" : "false";
+  return Boolean(value) ? "true" : "false";
+}
+
+function numberRangeOrDefault(value, fallback, min, max, label) {
+  const number = value === "" || value === undefined || value === null ? fallback : Number(value);
+  if (!Number.isFinite(number) || number < min || number > max) {
+    throw httpError(400, label + " non valido");
+  }
+  return String(number);
+}
+
+function xmlTextAttr(value) {
+  return xmlAttr(value).replace(/\r?\n/g, "&#10;");
+}
+
+function textSourceInfo(source) {
+  return {
+    name: source.name,
+    text: source.text,
+    chars: source.text.length,
+    lines: source.text.split(/\r?\n/).length,
+  };
+}
+
+function normalizeOptionalText(value) {
+  if (value === "" || value === undefined || value === null) return "";
+  return String(value).trim();
 }
 
 function missingCredentials() {

@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wilcom - Upload di immagini adatte al ricamo</title>
+  <style>
+    :root {
+      --ink: #1c252b;
+      --muted: #5d6970;
+      --line: #d8dee2;
+      --paper: #ffffff;
+      --page: #f3f5f6;
+      --accent: #006b5b;
+      --accent-soft: #e7f4f0;
+      --warn: #8b5a00;
+      --warn-soft: #fff4d6;
+      --danger: #a32929;
+      --danger-soft: #fdecec;
+      --info: #245b78;
+      --info-soft: #eaf4f9;
+      --code: #f0f2f3;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--page);
+      font: 15px/1.6 Inter, "Segoe UI", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+    a { color: var(--accent); }
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: var(--code);
+      font: 0.92em Consolas, monospace;
+    }
+    header {
+      padding: 42px max(24px, calc((100vw - 1120px) / 2));
+      color: #fff;
+      background: #172127;
+      border-bottom: 5px solid #1b9a80;
+    }
+    header p { max-width: 820px; margin: 10px 0 0; color: #d9e4e7; }
+    h1 { margin: 0; font-size: 34px; line-height: 1.15; letter-spacing: 0; }
+    h2 { margin: 0 0 18px; font-size: 25px; line-height: 1.25; letter-spacing: 0; }
+    h3 { margin: 25px 0 10px; font-size: 18px; line-height: 1.3; letter-spacing: 0; }
+    p { margin: 0 0 14px; }
+    ul, ol { margin: 8px 0 16px; padding-left: 24px; }
+    li + li { margin-top: 7px; }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 20px;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 9px;
+      border: 1px solid #526169;
+      border-radius: 4px;
+      color: #eef5f6;
+      font-size: 12px;
+    }
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      gap: 18px;
+      overflow-x: auto;
+      padding: 11px max(24px, calc((100vw - 1120px) / 2));
+      background: rgba(255,255,255,0.97);
+      border-bottom: 1px solid var(--line);
+    }
+    nav a { white-space: nowrap; color: var(--ink); text-decoration: none; font-weight: 600; font-size: 13px; }
+    main { max-width: 1120px; margin: 0 auto; background: var(--paper); }
+    section { padding: 38px 42px; border-bottom: 1px solid var(--line); }
+    .lead { font-size: 18px; color: #354249; }
+    .callout {
+      margin: 18px 0;
+      padding: 17px 19px;
+      border-left: 4px solid var(--info);
+      background: var(--info-soft);
+    }
+    .callout strong { display: block; margin-bottom: 4px; }
+    .callout.important { border-color: var(--accent); background: var(--accent-soft); }
+    .callout.warning { border-color: var(--warn); background: var(--warn-soft); }
+    .callout.danger { border-color: var(--danger); background: var(--danger-soft); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .finding {
+      min-height: 128px;
+      padding: 17px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+    }
+    .finding b { display: block; margin-bottom: 6px; color: var(--accent); font-size: 17px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 12px 13px; border: 1px solid var(--line); vertical-align: top; text-align: left; }
+    th { background: #edf1f2; font-weight: 700; }
+    tr:nth-child(even) td { background: #fafbfb; }
+    .level {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .level.hard { color: #7f1f1f; background: var(--danger-soft); }
+    .level.recommend { color: #6c4600; background: var(--warn-soft); }
+    .level.note { color: #174d69; background: var(--info-soft); }
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin: 20px 0;
+    }
+    .pipeline div {
+      position: relative;
+      padding: 14px 10px;
+      border: 1px solid var(--line);
+      border-top: 4px solid var(--accent);
+      background: #fff;
+      text-align: center;
+      font-weight: 650;
+      font-size: 13px;
+    }
+    .translation { max-width: 860px; }
+    .translation h3 { padding-top: 10px; border-top: 1px solid var(--line); }
+    .page-ref { color: var(--muted); font-size: 12px; font-weight: 600; }
+    .formula {
+      padding: 14px 16px;
+      overflow-x: auto;
+      background: #172127;
+      color: #eff7f7;
+      font-family: Consolas, monospace;
+      font-size: 13px;
+    }
+    footer { max-width: 1120px; margin: 0 auto 40px; padding: 24px 42px; color: var(--muted); background: #e9edef; }
+    @media (max-width: 760px) {
+      header { padding: 30px 20px; }
+      h1 { font-size: 28px; }
+      section { padding: 30px 20px; }
+      .grid { grid-template-columns: 1fr; }
+      .pipeline { grid-template-columns: 1fr; }
+    }
+    @media print {
+      nav { display: none; }
+      body { background: #fff; font-size: 11pt; }
+      header, main, footer { max-width: none; }
+      section { break-inside: auto; }
+      .finding, .callout, table, .pipeline { break-inside: avoid; }
+      a { color: var(--ink); text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Proteggere il sito da immagini non adatte al ricamo</h1>
+    <p>Traduzione ragionata della nota di supporto Wilcom Web API e impatto pratico su Embroidery Lab e su una futura integrazione Zakeke.</p>
+    <div class="meta">
+      <span class="tag">Fonte Wilcom, 3 febbraio 2022</span>
+      <span class="tag">Documento originale: 3 pagine</span>
+      <span class="tag">Traduzione italiana con analisi tecnica</span>
+    </div>
+  </header>
+
+  <nav aria-label="Indice">
+    <a href="#sintesi">Sintesi</a>
+    <a href="#soglie">Soglie</a>
+    <a href="#traduzione">Traduzione</a>
+    <a href="#sviluppo">Impatto sul Lab</a>
+    <a href="#piano">Piano tecnico</a>
+    <a href="#cautele">Cautele</a>
+  </nav>
+
+  <main>
+    <section id="sintesi">
+      <h2>Sintesi esecutiva</h2>
+      <p class="lead">Wilcom raccomanda di bloccare o correggere le immagini problematiche <strong>prima</strong> di inviarle all'AutoDigitizing API. Un input inadatto può impiegare molto tempo, fallire, consumare risorse e generare comunque un costo per il cliente API.</p>
+
+      <div class="grid">
+        <div class="finding"><b>Input ideale</b>Logo o emblema con forme semplici, contorni ben definiti, colori piatti e testo leggibile.</div>
+        <div class="finding"><b>Colori</b>Un logo produttivamente efficiente usa in genere non più di <strong>5-6 colori</strong>. È una raccomandazione, non un limite API dichiarato.</div>
+        <div class="finding"><b>Dettaglio</b>Wilcom raccomanda circa <strong>300 DPI</strong> e indica che l'AI necessita di almeno <strong>3 pixel di larghezza</strong> per riconoscere una linea.</div>
+        <div class="finding"><b>Contenuto da escludere</b>Le fotografie richiedono tecniche speciali che Wilcom EWA non usa; la nota raccomanda di non caricarle.</div>
+      </div>
+
+      <div class="callout important">
+        <strong>Nuova interpretazione utile per l'errore 151</strong>
+        Gradienti, antialiasing, micro-aree, linee sottili e molti colori possono produrre troppi confini o oggetti ambigui. La nota non rivela la formula dell'errore 151, ma conferma che questi elementi rendono l'immagine inadatta o molto costosa da elaborare.
+      </div>
+      <div class="callout warning">
+        <strong>Non basta aumentare artificialmente i pixel</strong>
+        Portare un'immagine piccola a 500 px o dichiararla a 300 DPI non ricrea bordi e dettagli assenti. Il controllo deve misurare la risoluzione effettiva rispetto alla dimensione fisica richiesta e la qualità reale dei contorni.
+      </div>
+    </section>
+
+    <section id="soglie">
+      <h2>Soglie e indicazioni Wilcom</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Controllo</th><th>Valore</th><th>Tipo</th><th>Come usarlo</th></tr></thead>
+          <tbody>
+            <tr><td>Dimensione file artwork</td><td><code>2 MB</code> massimo</td><td><span class="level hard">Filtro</span></td><td>Rifiutare o comprimere prima della chiamata. Nella nota è presentato come esempio di filtro e coincide con il limite EWA già documentato.</td></tr>
+            <tr><td>Numero di pixel</td><td><code>5.000.000 px</code> massimo</td><td><span class="level hard">Filtro</span></td><td>Per i vettoriali Wilcom controlla una preview rasterizzata a 300 DPI.</td></tr>
+            <tr><td>Area fisica</td><td><code>100-22.500 mm²</code></td><td><span class="level hard">Filtro</span></td><td>La nota propone sia un minimo sia un massimo. Il Lab applica già il massimo, non ancora il minimo.</td></tr>
+            <tr><td>Risoluzione</td><td>Circa <code>300 DPI</code></td><td><span class="level recommend">Raccomandazione</span></td><td>Valutare i pixel disponibili rispetto a larghezza e altezza finali, non solo il metadato DPI.</td></tr>
+            <tr><td>Larghezza riconoscibile di una linea</td><td>Almeno <code>3 px</code></td><td><span class="level note">Indicazione AI</span></td><td>Usare come warning sulla qualità dei confini. Non è una garanzia che la linea sia fisicamente ricamabile.</td></tr>
+            <tr><td>Colori tipici</td><td>Non più di <code>5-6</code></td><td><span class="level recommend">Produzione</span></td><td>Warning o proposta di riduzione colori. Non va trasformato in un rifiuto rigido.</td></tr>
+            <tr><td>Gradienti</td><td>Da evitare</td><td><span class="level recommend">Qualità</span></td><td>Proporre quantizzazione e accorpamento dei colori vicini prima dell'API.</td></tr>
+            <tr><td>Fotografie</td><td>Non supportate dal metodo EWA descritto</td><td><span class="level hard">Rifiuto</span></td><td>Mostrare un messaggio chiaro o indirizzare a un workflow specifico non Wilcom.</td></tr>
+            <tr><td>Oggetti molto piccoli</td><td>Nessuna soglia numerica</td><td><span class="level note">Comportamento</span></td><td>L'AutoDigitizing li rimuove come rumore; preflight e preview devono segnalarne la possibile perdita.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Relazione tra pixel, millimetri e DPI</h3>
+      <p>Per valutare davvero i 300 DPI serve conoscere la dimensione fisica finale. La formula da usare nel preflight è:</p>
+      <div class="formula">DPI effettivi = pixel / (millimetri / 25,4)
+Pixel richiesti a 300 DPI = millimetri × 300 / 25,4</div>
+      <p style="margin-top:12px">Esempio: un ricamo largo 100 mm richiede circa 1.181 px per raggiungere 300 DPI effettivi. A 300 DPI, una linea larga 3 px equivale a circa 0,254 mm nell'immagine, ma la fattibilità del punto resta una valutazione embroidery separata.</p>
+    </section>
+
+    <section id="traduzione">
+      <h2>Traduzione completa</h2>
+      <div class="translation">
+        <h3>Introduzione <span class="page-ref">pagina 1</span></h3>
+        <p>L'autodigitalizzazione è una funzione richiesta frequentemente nel servizio Wilcom EWA. Significa convertire automaticamente un artwork in un file da ricamo, invece di affidare la digitalizzazione a una persona.</p>
+        <p>È un processo complesso nel quale un modulo di intelligenza artificiale analizza l'immagine e la trasforma in un artwork adatto al ricamo: riduce i colori, genera gli oggetti, sceglie i tipi e le direzioni dei punti e imposta altri parametri, in modo simile al lavoro svolto da un digitalizzatore umano.</p>
+        <p>Non tutte le immagini sono adatte. Possono essere troppo grandi, contenere forme non riconoscibili, non permettere di determinare correttamente i contorni oppure includere gradazioni cromatiche non riproducibili con il ricamo. Se una di queste immagini viene comunque inviata al server API, il motore prova a elaborarla e può impiegare molto tempo prima di fallire.</p>
+        <p>Questo spreca risorse, sottrae capacità alle altre chiamate API e può generare un costo senza produrre un risultato. Può inoltre frustrare il visitatore del sito, che non conosce i limiti e potrebbe abbandonare l'ordine. È quindi importante impedire preventivamente il caricamento di immagini inadatte.</p>
+
+        <h3>Quali immagini sono adatte al ricamo? <span class="page-ref">pagine 1-2</span></h3>
+        <p>Nel contesto della decorazione online, la categoria più comune è quella di loghi ed emblemi: forme semplici, simili a un disegno, con scritte sotto o intorno. Secondo Wilcom, oltre il 90% degli ordini di ricamo commerciale ricade in questa categoria.</p>
+        <p>Le immagini create con software grafici, dotate di contorni ben definiti e colori piatti senza gradienti, sono quindi le più adatte. I disegni efficienti, come i loghi aziendali, generalmente non superano 5-6 colori; oltre questo numero aumentano la complessità, il messaggio visivo può indebolirsi e i numerosi cambi colore rendono la produzione più costosa. La riduzione colori è una funzione centrale nella preparazione dell'immagine.</p>
+        <p>Esistono anche limiti relativi alle dimensioni e alla larghezza degli oggetti, soprattutto quelli molto piccoli. Il ricamo è composto da punti: elementi troppo piccoli non risultano bene e non vengono cuciti correttamente. Il processo di autodigitalizzazione tende a rimuoverli come rumore.</p>
+        <p>Molte immagini caricate non contengono dettaglio sufficiente, in particolare quelle destinate allo schermo a 72 o 96 DPI. In tali casi non è possibile riconoscere bene i confini. Wilcom porta l'esempio di una linea che deve essere larga almeno 3 pixel perché l'AI possa identificarla e raccomanda immagini intorno a 300 DPI.</p>
+        <p>È possibile ricamare anche fotografie, ma richiedono una particolare interpretazione non tradizionale. Wilcom EWA non utilizza queste tecniche e pertanto le fotografie non dovrebbero essere caricate.</p>
+
+        <h3>Come filtrare le immagini inadatte sul sito <span class="page-ref">pagina 2</span></h3>
+        <p>Il primo livello consiste nel fornire istruzioni chiare su quali immagini siano preferite e quali verranno rifiutate, così da guidare preventivamente il comportamento dell'utente.</p>
+        <p>Il secondo livello è il filtraggio, realizzato internamente oppure tramite strumenti di terze parti. Un'immagine inadatta dovrebbe essere rifiutata con un messaggio comprensibile, che spieghi perché non può essere usata per il ricamo.</p>
+        <p>Wilcom suggerisce, come esempio di filtro proprietario, una dimensione massima di 2 MB, un massimo di 5.000.000 di pixel, un'area massima di 22.500 mm² e un'area minima di 100 mm². Per i file vettoriali viene verificata la preview generata a 300 DPI. In via opzionale si può limitare anche il numero di colori.</p>
+
+        <h3>Strumenti e servizi di terze parti <span class="page-ref">pagine 2-3</span></h3>
+        <p>La nota propone Azure Computer Vision come esempio di servizio AI addestrabile con immagini classificate come accettabili e non accettabili. Dopo un numero sufficiente di esempi, secondo Wilcom il modello può superare il 90% di accuratezza nel rifiuto degli input inadatti.</p>
+        <p>Per costruire il dataset, Wilcom indica EmbroideryStudio e4.5 con Instant Smart Design come metodo migliore per stabilire se un'immagine sia adatta. La nota afferma che questo processo restituisce lo stesso risultato del server API versione 4.5, permettendo di costruire una libreria di esempi positivi e negativi.</p>
+
+        <h3>Riduzione colori <span class="page-ref">pagina 3</span></h3>
+        <p>Le immagini possono essere elaborate per ridurre i colori a un numero compatibile con l'unità produttiva. Lo scopo principale è ridurre il costo del ricamo: maggiore è l'automazione, minore sarà il lavoro di modifica successivo. La nota suggerisce che software di terze parti per la riduzione colori possono essere integrati direttamente nel sito.</p>
+
+        <h3>Messaggi corretti per il cliente <span class="page-ref">pagina 3</span></h3>
+        <p>È essenziale gestire le aspettative di chi non sa che alcune immagini non sono adatte al ricamo. Una spiegazione iniziale chiara riduce frustrazione e tentativi ripetuti di caricare lo stesso file. Anche i messaggi di errore devono essere autoesplicativi, in modo che il cliente comprenda il limite e sappia come correggere l'immagine.</p>
+      </div>
+    </section>
+
+    <section id="sviluppo">
+      <h2>Cosa cambia per Embroidery Lab</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Area</th><th>Stato attuale</th><th>Apprendimento dalla nota</th><th>Azione consigliata</th></tr></thead>
+          <tbody>
+            <tr><td>File e pixel</td><td>Wilcom usa limiti conservativi di circa 1,9 MB e 4,9 milioni di pixel.</td><td>Approccio coerente con la nota.</td><td>Mantenere e registrare sempre valore originale e valore inviato.</td></tr>
+            <tr><td>Area fisica</td><td>È verificato il massimo di 22.500 mm².</td><td>Manca il minimo suggerito di 100 mm².</td><td>Aggiungere preflight e messaggio specifico sotto 100 mm².</td></tr>
+            <tr><td>Risoluzione</td><td>È possibile fare upscale fino alla dimensione minima in pixel.</td><td>L'upscale non crea dettaglio; il requisito deve essere espresso come DPI effettivi.</td><td>Calcolare DPI da pixel e dimensioni finali e distinguere warning da resize tecnico.</td></tr>
+            <tr><td>Linee sottili</td><td>Nessuna stima automatica.</td><td>Wilcom indica almeno 3 px per riconoscere una linea.</td><td>Stimare lo spessore minimo dei tratti o almeno la quota di bordi sottili.</td></tr>
+            <tr><td>Colori</td><td>Palette editabile e semplificazione opzionale, attualmente con default 24 colori.</td><td>5-6 colori è il target tipico di un logo efficiente, non il limite API.</td><td>Testare preset 6, 8, 12 e 24; non imporre 6 in modo universale.</td></tr>
+            <tr><td>Gradienti e micro-aree</td><td>Possibile causa dell'errore 151, ma senza metrica esplicita.</td><td>La nota conferma che gradazioni, confini ambigui e oggetti piccoli sono problematici.</td><td>Salvare indicatori di gradiente, componenti con area ridotta e complessità dei bordi.</td></tr>
+            <tr><td>Fotografie</td><td>Nessun filtro dedicato.</td><td>Il workflow EWA descritto non usa tecniche photo-embroidery.</td><td>Classificare foto o immagini fotorealistiche e non inviarle automaticamente a Wilcom.</td></tr>
+            <tr><td>Messaggi UI</td><td>L'errore upstream viene mostrato e salvato.</td><td>Wilcom chiede messaggi preventivi e comprensibili.</td><td>Tradurre ogni rifiuto in una causa e in un'azione: riduci colori, aumenta dettaglio, semplifica o scegli un altro file.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout important">
+        <strong>Regola progettuale da conservare</strong>
+        Il preprocessing deve produrre un effetto reale sul file inviato, salvare sia l'originale sia la versione trasformata nella run e riportare metriche e decisione nel database. Nessun controllo deve esistere soltanto nel frontend.
+      </div>
+    </section>
+
+    <section id="piano">
+      <h2>Pipeline consigliata</h2>
+      <div class="pipeline" aria-label="Pipeline di validazione">
+        <div>1. Analisi sorgente</div>
+        <div>2. Valutazione rischio</div>
+        <div>3. Preprocessing</div>
+        <div>4. Wilcom API</div>
+        <div>5. Storico e confronto</div>
+      </div>
+
+      <h3>1. Metriche da salvare prima della chiamata</h3>
+      <ul>
+        <li>Byte, formato, larghezza e altezza in pixel, trasparenza e metadato DPI.</li>
+        <li>Dimensione fisica richiesta, area in mm² e DPI effettivi sui due assi.</li>
+        <li>Colori dominanti e conteggi dopo quantizzazione a 6, 8, 12 e 24 colori.</li>
+        <li>Stima di gradienti, antialiasing, numero di regioni e percentuale di micro-aree.</li>
+        <li>Stima della larghezza minima dei tratti e probabilità di contenuto fotografico.</li>
+      </ul>
+
+      <h3>2. Decisione esplicita</h3>
+      <ul>
+        <li><strong>Accept:</strong> input già compatibile.</li>
+        <li><strong>Accept with preprocessing:</strong> l'immagine può essere quantizzata, semplificata o ripulita.</li>
+        <li><strong>Reject:</strong> fotografia, dettaglio insufficiente, area fuori soglia o struttura non recuperabile.</li>
+      </ul>
+
+      <h3>3. Esperimenti prioritari per l'errore 151</h3>
+      <ol>
+        <li>Originale contro palette a 24, 12, 8 e 6 colori.</li>
+        <li>Con e senza rimozione sfondo, mantenendo identici gli altri parametri.</li>
+        <li>Rimozione delle componenti molto piccole prima della quantizzazione.</li>
+        <li>Semplificazione dei bordi e riduzione dell'antialiasing.</li>
+        <li>Confronto di successo, tempo, numero punti, colori, trims e qualità visiva.</li>
+      </ol>
+
+      <h3>4. Messaggi proposti</h3>
+      <div class="grid">
+        <div class="finding"><b>Troppi dettagli o gradienti</b>Questa immagine contiene sfumature o molti piccoli elementi. Usa una versione del logo con colori piatti oppure applica la semplificazione.</div>
+        <div class="finding"><b>Risoluzione insufficiente</b>L'immagine non contiene abbastanza pixel per la dimensione di ricamo scelta. Carica una versione più grande o riduci la dimensione finale.</div>
+        <div class="finding"><b>Elementi troppo piccoli</b>Alcuni dettagli potrebbero essere rimossi durante la digitalizzazione perché non sono riproducibili correttamente con i punti.</div>
+        <div class="finding"><b>Fotografia</b>Wilcom EWA non è il workflow adatto alle fotografie. Usa un'immagine grafica con forme e colori piatti.</div>
+      </div>
+    </section>
+
+    <section id="cautele">
+      <h2>Cautele interpretative</h2>
+      <ul>
+        <li>La nota è datata 2022 e fa riferimento a EmbroideryStudio e4.5 e al server API V4.5. I limiti contrattuali correnti vanno confermati con Wilcom.</li>
+        <li>I 5-6 colori sono una raccomandazione di efficienza per loghi commerciali, non un massimo tecnico dichiarato dall'AutoDigitizing API.</li>
+        <li>I 3 pixel descrivono la capacità dell'AI di riconoscere una linea nell'immagine, non la larghezza minima ricamabile sul tessuto.</li>
+        <li>Le percentuali superiori al 90% su ordini commerciali e accuratezza Azure sono affermazioni della nota Wilcom, non misurazioni indipendenti.</li>
+        <li>La nota non documenta una soglia numerica per l'errore 151 e non espone parametri API nativi per smoothing, minimum area o max colors.</li>
+      </ul>
+      <div class="callout">
+        <strong>Conclusione</strong>
+        La direzione corretta per Zakeke è un preflight provider-aware: non soltanto adattare byte e pixel, ma classificare l'idoneità embroidery, proporre trasformazioni verificabili e impedire chiamate Wilcom destinate con alta probabilità a fallire.
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Documento derivato da “Wilcom Web API Support Information - Protecting your Website from Image-uploads unsuitable for embroidery”, 3 febbraio 2022. Per la documentazione API corrente consultare <a href="https://apiguide.wilcom.com/">apiguide.wilcom.com</a>.
+  </footer>
+</body>
+</html>

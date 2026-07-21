@@ -1,0 +1,141 @@
+{
+  "createdAt": "2026-07-20T19:49:48.956Z",
+  "resultCount": 19,
+  "originalFileCount": 18,
+  "note": "The 2 cuori result is intentionally reused for two report records with identical source image hashes.",
+  "mappings": [
+    {
+      "sourceId": "C3-001-S01",
+      "originalResultFile": "arcon.PNG",
+      "normalizedResultFile": "C3-001-S01__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": false
+    },
+    {
+      "sourceId": "C3-002-S01",
+      "originalResultFile": "smile.PNG",
+      "normalizedResultFile": "C3-002-S01__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": false
+    },
+    {
+      "sourceId": "C3-003-S01",
+      "originalResultFile": "14.PNG",
+      "normalizedResultFile": "C3-003-S01__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": false
+    },
+    {
+      "sourceId": "C3-004-S01",
+      "originalResultFile": "volpe.PNG",
+      "normalizedResultFile": "C3-004-S01__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": false
+    },
+    {
+      "sourceId": "C3-005-S01",
+      "originalResultFile": "fuoco.PNG",
+      "normalizedResultFile": "C3-005-S01__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": false
+    },
+    {
+      "sourceId": "C3-006-S01",
+      "originalResultFile": "fox.PNG",
+      "normalizedResultFile": "C3-006-S01__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": false
+    },
+    {
+      "sourceId": "C3-007-S01",
+      "originalResultFile": "btech.PNG",
+      "normalizedResultFile": "C3-007-S01__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": false
+    },
+    {
+      "sourceId": "C3-008-S01",
+      "originalResultFile": "4 triangoli.PNG",
+      "normalizedResultFile": "C3-008-S01__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": false
+    },
+    {
+      "sourceId": "C3-009-S01",
+      "originalResultFile": "drago.PNG",
+      "normalizedResultFile": "C3-009-S01__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": false
+    },
+    {
+      "sourceId": "C3-010-S01",
+      "originalResultFile": "diamante.PNG",
+      "normalizedResultFile": "C3-010-S01__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": false
+    },
+    {
+      "sourceId": "C3-011-S01",
+      "originalResultFile": "ikea.PNG",
+      "normalizedResultFile": "C3-011-S01__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": false
+    },
+    {
+      "sourceId": "C3-012-S01",
+      "originalResultFile": "C3-012-S01__instagram-logo-png-2428-1.PNG",
+      "normalizedResultFile": "C3-012-S01__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": false
+    },
+    {
+      "sourceId": "C3-013-S01",
+      "originalResultFile": "lenovo.PNG",
+      "normalizedResultFile": "C3-013-S01__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": false
+    },
+    {
+      "sourceId": "C3-014-S01",
+      "originalResultFile": "nutrition.PNG",
+      "normalizedResultFile": "C3-014-S01__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": false
+    },
+    {
+      "sourceId": "C3-015-S01",
+      "originalResultFile": "firefox.PNG",
+      "normalizedResultFile": "C3-015-S01__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": false
+    },
+    {
+      "sourceId": "C3-016-S01",
+      "originalResultFile": "zakeke.PNG",
+      "normalizedResultFile": "C3-016-S01__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": false
+    },
+    {
+      "sourceId": "C3-017-S01",
+      "originalResultFile": "ita.PNG",
+      "normalizedResultFile": "C3-017-S01__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": false
+    },
+    {
+      "sourceId": "C3-017-S02",
+      "originalResultFile": "2 cuori.PNG",
+      "normalizedResultFile": "C3-017-S02__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": true
+    },
+    {
+      "sourceId": "C3-018-S01",
+      "originalResultFile": "2 cuori.PNG",
+      "normalizedResultFile": "C3-018-S01__fourth-provider.png",
+      "inferredFromVisualContent": true,
+      "reusedForIdenticalSource": true
+    }
+  ]
+}

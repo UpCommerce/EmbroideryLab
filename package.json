@@ -1,11 +1,11 @@
-{
+﻿{
   "name": "embroidery-lab",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "check": "node --check server.mjs && node --check providers/wilcom.mjs && node --check providers/pulseid.mjs && node --check providers/melco.mjs && node --check providers/zsk.mjs && node --check public/app.js && node --check scripts/normalize-samples.mjs",
+    "check": "node --check server.mjs && node --check providers/wilcom.mjs && node --check providers/pulseid.mjs && node --check providers/melco.mjs && node --check providers/zsk.mjs && node --check lib/history-report.mjs && node --check public/app.js && node --check scripts/normalize-samples.mjs",
     "normalize:samples": "node scripts/normalize-samples.mjs"
   },
   "dependencies": {
@@ -30,3 +30,4 @@
   },
   "homepage": "https://github.com/UpCommerce/EmbroideryLab#readme"
 }
+

@@ -14,6 +14,15 @@ export const melcoProvider = {
       name: "Melco Cloud",
       status: missing.length === 0 ? "ready" : "unavailable",
       configured: missing.length === 0,
+      capabilities: {
+        image: { supported: true, configured: missing.length === 0, missing },
+        text: {
+          supported: false,
+          configured: false,
+          missing: [],
+          reason: "Melco Cloud standalone text lettering non e ancora esposto nel Lab: serve conferma endpoint backend senza Live Designer/Fusion UI.",
+        },
+      },
       modes: ["trueview", "design"],
       baseUrl: baseUrl(),
       missing,
@@ -131,6 +140,9 @@ export const melcoProvider = {
       designInfo: metadata,
       runFiles,
     };
+  },
+  async convertText() {
+    throw httpError(400, "Melco text non disponibile: serve endpoint backend per lettering standalone senza Live Designer/Fusion UI.");
   },
 };
 

@@ -34,6 +34,10 @@ export const pulseIdProvider = {
       name: "PulseID",
       status: "ready",
       configured: true,
+      capabilities: {
+        image: { supported: true, configured: true },
+        text: { supported: true, configured: true },
+      },
       modes: ["trueview", "design"],
       baseUrl: process.env.PULSEID_BASE_URL ?? DEFAULT_BASE_URL,
     };
@@ -170,6 +174,95 @@ export const pulseIdProvider = {
       runFiles,
     };
   },
+  async convertText(source, options, runDir) {
+    mkdirSync(runDir, { recursive: true });
+
+    const mode = options.mode === "design" ? "design" : "trueview";
+    const textOptions = options.text ?? {};
+    const pulseOptions = options.pulseText ?? {};
+    const designFormat = normalizeDesignFormat(options.designFormat ?? "dst");
+    const renderWidthPx = positiveIntegerOrDefault(pulseOptions.renderWidth, 900, "Render width");
+    const renderHeightPx = positiveIntegerOrDefault(pulseOptions.renderHeight, 420, "Render height");
+    const renderPadding = positiveIntegerOrDefault(pulseOptions.renderPadding, 30, "Render padding", true);
+    const baseUrl = (process.env.PULSEID_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/+$/, "");
+    const letteringParams = buildLetteringParams({ source, textOptions, pulseOptions });
+    const renderParams = new URLSearchParams({
+      ...letteringParams,
+      Format: "png",
+      Background: pulseOptions.transparentPreview === false ? "ffffffff" : "00000000",
+      ImageWidth: String(renderWidthPx),
+      ImageHeight: String(renderHeightPx),
+      Padding: String(renderPadding),
+      LightenShadows: boolParam(pulseOptions.lightenShadows, false),
+    });
+    const infoParams = new URLSearchParams({ ...letteringParams, Format: "json" });
+    const generateParams = new URLSearchParams({
+      ...letteringParams,
+      Format: designFormat.toUpperCase(),
+      Filename: `text-design.${designFormat}`,
+    });
+    const infoUrl = `${baseUrl}/1/GetInfo/Lettering?${infoParams}`;
+    const renderUrl = `${baseUrl}/1/Render/Lettering?${renderParams}`;
+    const generateUrl = `${baseUrl}/1/Generate/Lettering?${generateParams}`;
+    const sourceInfo = textSourceInfo(source);
+    const requestInfo = {
+      provider: "pulse",
+      sourceType: "text",
+      mode,
+      infoUrl,
+      renderUrl,
+      generateUrl: mode === "design" ? generateUrl : null,
+      letteringParams,
+      source: sourceInfo,
+    };
+
+    writeFileSync(join(runDir, "text-source.json"), JSON.stringify(sourceInfo, null, 2), "utf8");
+    writeFileSync(join(runDir, "pulseid-text-request.json"), JSON.stringify(requestInfo, null, 2), "utf8");
+
+    const runFiles = [
+      { name: "text-source.json", kind: "source-info" },
+      { name: "pulseid-text-request.json", kind: "request" },
+    ];
+    const files = [];
+
+    const info = await fetchText(infoUrl, "PulseID lettering get info");
+    writeFileSync(join(runDir, "pulseid-text-getinfo-response.json"), info.text, "utf8");
+    runFiles.push({ name: "pulseid-text-getinfo-response.json", kind: "response" });
+    let designInfo = parsePulseInfo(info.text);
+
+    const preview = await fetchBinary(renderUrl, "PulseID lettering render");
+    writeFileSync(join(runDir, "pulseid-text-preview.png"), preview.buffer);
+    files.push({
+      name: "pulseid-text-preview.png",
+      mimeType: preview.contentType || "image/png",
+      base64: preview.buffer.toString("base64"),
+    });
+    runFiles.push({ name: "pulseid-text-preview.png", kind: "preview" });
+
+    if (mode === "design") {
+      const design = await fetchBinary(generateUrl, "PulseID lettering generate");
+      const fileName = `pulseid-text-design.${designFormat}`;
+      writeFileSync(join(runDir, fileName), design.buffer);
+      files.push({
+        name: fileName,
+        mimeType: design.contentType || "application/octet-stream",
+        base64: design.buffer.toString("base64"),
+      });
+      runFiles.push({ name: fileName, kind: "design" });
+    }
+
+    designInfo = designInfo
+      ? { ...designInfo, source_type: "text", text: source.text, font: letteringParams.Font }
+      : { source_type: "text", text: source.text, font: letteringParams.Font };
+
+    return {
+      provider: "pulse",
+      requestXml: JSON.stringify(requestInfo, null, 2),
+      files,
+      designInfo,
+      runFiles,
+    };
+  },
 };
 
 function buildAutodigitizeParams({ widthPoints, heightPoints, pulseOptions, timeoutSeconds }) {
@@ -203,6 +296,88 @@ function buildAutodigitizeParams({ widthPoints, heightPoints, pulseOptions, time
   assignOptionalNumber(params, "MaximumSteilWidth", pulseOptions.maximumSteilWidth, "Steil max width");
   assignOptionalNumber(params, "TrimThreshold", pulseOptions.trimThreshold, "Trim threshold", true);
   if (numColors) params.NumColors = String(numColors);
+
+  return params;
+}
+
+function buildLetteringParams({ source, textOptions, pulseOptions }) {
+  const type = enumParam(
+    pulseOptions.type,
+    new Set(["ltNormal", "ltMonogram", "ltArc", "ltCircle"]),
+    "ltNormal",
+    "Lettering type"
+  );
+  const params = {
+    Type: type,
+    Text: source.text,
+    Font: normalizeOptionalText(pulseOptions.font) || "Block New",
+    Height: String(mmToEmbroideryPoints(textOptions.heightMm ?? pulseOptions.heightMm ?? 12)),
+    WidthCompression: String(optionalPositiveNumber(pulseOptions.widthCompression, "Width compression") ?? 100),
+    Justification: enumParam(
+      pulseOptions.justification,
+      new Set(["jtCenter", "jtLeft", "jtRight", "jtFillBox", "jtFitToCurve"]),
+      "jtCenter",
+      "Justification"
+    ),
+    Envelope: enumParam(
+      pulseOptions.envelope,
+      new Set([
+        "etRectangle",
+        "etBridgeConcaveTop",
+        "etBridgeConcaveBottom",
+        "etDoubleConcaveBridges",
+        "etBridgeConvexTop",
+        "etBridgeConvexBottom",
+        "etDoubleConvexBridges",
+        "etConcaveTopConvexBottom",
+        "etConvexTopConcaveBottom",
+        "etPennantRight",
+        "etPennantLeft",
+      ]),
+      "etRectangle",
+      "Envelope"
+    ),
+    Needle: String(optionalPositiveInteger(pulseOptions.needle, "Needle", true) ?? 0),
+    Recipe: normalizeOptionalText(pulseOptions.recipe) || "Normal",
+    MachineFormat: normalizeOptionalText(pulseOptions.machineFormat) || "Tajima",
+    RemoveUnusedNeedles: boolParam(pulseOptions.removeUnusedNeedles, true),
+  };
+
+  const threadColor = normalizeHexColor(textOptions.threadColor ?? pulseOptions.threadColor ?? "#0073cf");
+  if (threadColor) params["Palette[0]"] = threadColor.slice(1);
+
+  if (pulseOptions.isRainbowText) {
+    params.IsRainbowText = "True";
+    const rainbowColors = parseColorList(pulseOptions.rainbowColors);
+    rainbowColors.forEach((color, index) => {
+      params[`RainbowColors[${index}].Name`] = `Color ${index + 1}`;
+      params[`RainbowColors[${index}].Code`] = String(index + 1);
+      params[`RainbowColors[${index}].Hex`] = color.slice(1);
+    });
+  }
+
+  if (type === "ltArc") {
+    assignOptionalNumber(params, "X1", pulseOptions.x1, "Arc X1", true);
+    assignOptionalNumber(params, "Y1", pulseOptions.y1, "Arc Y1", true);
+    assignOptionalNumber(params, "X2", pulseOptions.x2, "Arc X2", true);
+    assignOptionalNumber(params, "Y2", pulseOptions.y2, "Arc Y2", true);
+    assignOptionalNumber(params, "X3", pulseOptions.x3, "Arc X3", true);
+    assignOptionalNumber(params, "Y3", pulseOptions.y3, "Arc Y3", true);
+  }
+
+  if (type === "ltCircle") {
+    const bottomText = normalizeOptionalText(pulseOptions.bottomText);
+    if (bottomText) params.BottomText = bottomText;
+    assignOptionalNumber(params, "CenterX", pulseOptions.centerX, "Circle CenterX", true);
+    assignOptionalNumber(params, "CenterY", pulseOptions.centerY, "Circle CenterY", true);
+    assignOptionalNumber(params, "RefX", pulseOptions.refX, "Circle RefX", true);
+    assignOptionalNumber(params, "RefY", pulseOptions.refY, "Circle RefY", true);
+  }
+
+  if (type === "ltMonogram") {
+    const decoration = normalizeOptionalText(pulseOptions.decoration);
+    if (decoration) params.Decoration = decoration;
+  }
 
   return params;
 }
@@ -318,10 +493,10 @@ function optionalPositiveNumber(value, label, allowZero = false) {
   return number;
 }
 
-function optionalPositiveInteger(value, label) {
+function optionalPositiveInteger(value, label, allowZero = false) {
   if (value === "" || value === undefined || value === null) return undefined;
   const number = Number(value);
-  if (!Number.isInteger(number) || number <= 0) {
+  if (!Number.isInteger(number) || (allowZero ? number < 0 : number <= 0)) {
     throw httpError(400, `${label} non valido`);
   }
   return number;
@@ -339,6 +514,26 @@ function positiveIntegerOrDefault(value, fallback, label, allowZero = false) {
 function normalizeOptionalText(value) {
   if (value === "" || value === undefined || value === null) return "";
   return String(value).trim();
+}
+
+function parseColorList(value) {
+  const list = Array.isArray(value) ? value : String(value || "").split(",");
+  return list.map(normalizeHexColor).filter(Boolean);
+}
+
+function normalizeHexColor(value) {
+  const text = String(value || "").trim();
+  const match = text.match(/^#?([0-9a-fA-F]{6})$/);
+  return match ? `#${match[1].toUpperCase()}` : "";
+}
+
+function textSourceInfo(source) {
+  return {
+    name: source.name,
+    text: source.text,
+    chars: source.text.length,
+    lines: source.text.split(/\r?\n/).length,
+  };
 }
 
 function normalizeDesignFormat(value) {

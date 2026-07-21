@@ -14,6 +14,7 @@ import {
   recordExecution,
   runFilesFromDirectory,
 } from "./lib/history-db.mjs";
+import { generateHistoryReport } from "./lib/history-report.mjs";
 import { preprocessSourceImage } from "./lib/source-preprocess.mjs";
 import { getProvider, getProviders } from "./providers/index.mjs";
 
@@ -25,6 +26,7 @@ const SAMPLES_DIR = join(PUBLIC_DIR, "samples");
 const RUNS_DIR = join(SERVER_DIR, "runs");
 const LOGS_DIR = join(SERVER_DIR, "logs");
 const DATA_DIR = join(SERVER_DIR, "data");
+const REPORTS_DIR = join(SERVER_DIR, "reports");
 const SOURCE_ORIGINALS_DIR = join(SERVER_DIR, "source-originals");
 const MAX_BODY_BYTES = 25 * 1024 * 1024;
 const SAMPLE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tif", ".tiff"]);
@@ -34,6 +36,7 @@ const WILCOM_MAX_SOURCE_BYTES = 1_900_000;
 mkdirSync(RUNS_DIR, { recursive: true });
 mkdirSync(LOGS_DIR, { recursive: true });
 mkdirSync(DATA_DIR, { recursive: true });
+mkdirSync(REPORTS_DIR, { recursive: true });
 mkdirSync(SOURCE_ORIGINALS_DIR, { recursive: true });
 openHistoryDatabase(join(DATA_DIR, "history.sqlite"));
 backfillExecutionsFromRuns(RUNS_DIR);
@@ -72,15 +75,31 @@ const server = createServer(async (request, response) => {
       return sendJson(response, 200, { compare: recordCompare(body) });
     }
 
+    if (request.method === "POST" && url.pathname === "/api/reports/history") {
+      const report = await generateHistoryReport({
+        repoDir: SERVER_DIR,
+        dbPath: join(DATA_DIR, "history.sqlite"),
+        reportsDir: REPORTS_DIR,
+      });
+      return sendJson(response, 200, { report });
+    }
     if (request.method === "POST" && url.pathname === "/api/convert") {
       const body = await readJsonBody(request);
       return await handleConvert(response, body);
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/convert-text") {
+      const body = await readJsonBody(request);
+      return await handleConvertText(response, body);
     }
 
     if (request.method === "GET" && url.pathname.startsWith("/runs/")) {
       return serveRunFile(response, url.pathname);
     }
 
+    if (request.method === "GET" && url.pathname.startsWith("/reports/")) {
+      return serveReportFile(response, url.pathname);
+    }
     if (request.method === "GET") {
       return serveStatic(response, url.pathname);
     }
@@ -172,6 +191,77 @@ async function handleConvert(response, body) {
   return sendJson(response, 200, payload);
 }
 
+async function handleConvertText(response, body) {
+  const provider = getProvider(body.provider);
+  if (!provider) {
+    return sendJson(response, 400, { error: "Provider non disponibile: " + body.provider });
+  }
+
+  if (typeof provider.convertText !== "function") {
+    return sendJson(response, 400, { error: provider.id + " non supporta ancora la conversione testo" });
+  }
+
+  const textSource = parseTextPayload(body.source ?? body.text);
+  const runId = createRunId(provider.id);
+  const runDir = join(RUNS_DIR, runId);
+  mkdirSync(runDir, { recursive: true });
+
+  const sourceManifest = textSourceManifest(textSource);
+  const sourcePreprocess = { manifest: sourceManifest };
+  let result;
+
+  try {
+    result = await provider.convertText(textSource, body.options ?? {}, runDir, { sourceManifest });
+  } catch (error) {
+    writeRunErrorLog({
+      error,
+      providerId: provider.id,
+      runId,
+      runDir,
+      image: textSourceAsImage(textSource),
+      sourcePreprocess,
+      options: { ...(body.options ?? {}), sourceType: "text" },
+    });
+    recordExecution({
+      runId,
+      providerId: provider.id,
+      ok: false,
+      status: statusForError(error),
+      error,
+      image: { name: textSource.name },
+      sourcePreprocess: sourceManifest,
+      options: { ...(body.options ?? {}), sourceType: "text" },
+      runFiles: runFilesFromDirectory(runId, runDir),
+    });
+    throw error;
+  }
+
+  const runFiles = (result.runFiles ?? []).map((file) => ({
+    ...file,
+    url: "/runs/" + runId + "/" + encodeURIComponent(file.name),
+  }));
+  const payload = {
+    ...result,
+    runId,
+    sourcePreprocess: sourceManifest,
+    runFiles,
+  };
+
+  recordExecution({
+    runId,
+    providerId: provider.id,
+    ok: true,
+    status: 200,
+    image: { name: textSource.name },
+    sourcePreprocess: sourceManifest,
+    options: { ...(body.options ?? {}), sourceType: "text" },
+    result,
+    runFiles,
+  });
+
+  return sendJson(response, 200, payload);
+}
+
 function preprocessingOptionsForProvider(providerId, requestedOptions) {
   const options = { ...(requestedOptions ?? {}) };
   if (providerId !== "wilcom") return options;
@@ -205,6 +295,54 @@ function listSamples() {
       name,
       url: `/samples/${encodeURIComponent(name)}`,
     }));
+}
+
+function parseTextPayload(source) {
+  const rawText = typeof source === "string" ? source : source?.text;
+  const text = String(rawText ?? "").trim();
+  if (!text) {
+    throw httpError(400, "Testo mancante");
+  }
+  if (text.length > 500) {
+    throw httpError(400, "Testo troppo lungo: limite Lab 500 caratteri per singola prova");
+  }
+
+  const requestedName = typeof source === "object" && source?.name ? String(source.name) : "lettering.txt";
+  return {
+    name: safeTextSourceName(requestedName, text),
+    text,
+  };
+}
+
+function safeTextSourceName(name, text) {
+  const cleaned = String(name || "").replace(/[^0-9A-Za-z._ -]/g, "_").trim();
+  if (cleaned) return cleaned.toLowerCase().endsWith(".txt") ? cleaned : cleaned + ".txt";
+  const slug = text.split(/\s+/).slice(0, 4).join("-").replace(/[^0-9A-Za-z_-]/g, "_");
+  return (slug || "lettering") + ".txt";
+}
+
+function textSourceManifest(source) {
+  return {
+    kind: "text",
+    original: {
+      name: source.name,
+      chars: source.text.length,
+      lines: source.text.split(/\r?\n/).length,
+    },
+    sent: {
+      name: source.name,
+      chars: source.text.length,
+      lines: source.text.split(/\r?\n/).length,
+    },
+  };
+}
+
+function textSourceAsImage(source) {
+  return {
+    name: source.name,
+    mimeType: "text/plain",
+    base64: Buffer.from(source.text, "utf8").toString("base64"),
+  };
 }
 
 function parseImagePayload(image) {
@@ -274,6 +412,15 @@ function serveRunFile(response, pathname) {
   return sendBuffer(response, 200, readFileSync(filePath), contentType(filePath));
 }
 
+function serveReportFile(response, pathname) {
+  const relative = pathname.replace(/^\/reports\//, "");
+  const filePath = safeResolve(REPORTS_DIR, relative);
+  if (!filePath || !existsSync(filePath) || statSync(filePath).isDirectory()) {
+    return sendText(response, 404, "Not found", "text/plain");
+  }
+
+  return sendBuffer(response, 200, readFileSync(filePath), contentType(filePath));
+}
 function safeResolve(root, requestPath) {
   const decoded = decodeURIComponent(requestPath).replace(/^[/\\]+/, "");
   const target = resolve(root, normalize(decoded));
@@ -306,6 +453,7 @@ function contentType(filePath) {
   if (lower.endsWith(".css")) return "text/css; charset=utf-8";
   if (lower.endsWith(".js")) return "text/javascript; charset=utf-8";
   if (lower.endsWith(".json")) return "application/json; charset=utf-8";
+  if (lower.endsWith(".txt")) return "text/plain; charset=utf-8";
   if (lower.endsWith(".png")) return "image/png";
   if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
   if (lower.endsWith(".xml")) return "application/xml; charset=utf-8";
@@ -378,6 +526,7 @@ function serializeError(error) {
 }
 
 function summarizeImage(image) {
+  if (!image) return null;
   return {
     name: image.name,
     mimeType: image.mimeType,
@@ -433,3 +582,7 @@ function httpError(status, message) {
   error.status = status;
   return error;
 }
+
+
+
+

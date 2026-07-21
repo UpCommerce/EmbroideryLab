@@ -25,9 +25,17 @@
       <section class="panel source-panel" aria-labelledby="source-title">
         <div class="panel-heading">
           <h2 id="source-title">Source</h2>
-          <button id="sample-button" class="ghost-button" type="button">Load sample</button>
         </div>
 
+        <div class="control-block source-type-block">
+          <div class="field-label">Source type</div>
+          <div class="segmented">
+            <button class="segment active" type="button" data-source-type="image">Image</button>
+            <button class="segment" type="button" data-source-type="text">Text</button>
+          </div>
+        </div>
+
+        <div id="image-source-block" class="source-mode-block">
         <label id="drop-zone" class="drop-zone" for="file-input">
           <input id="file-input" type="file" accept="image/png,image/jpeg,image/bmp,image/gif,image/tiff,application/pdf,application/postscript,.pdf,.eps" />
           <span id="drop-title">Choose image</span>
@@ -53,6 +61,35 @@
             <span class="label-with-tip">Min source side px <span class="tip" tabindex="0" data-tip="Before conversion, images smaller than this shortest side are upscaled on the server. Use 500 for providers that reject smaller images. 0 disables upscale.">?</span></span>
             <input id="source-min-side" type="number" min="0" step="50" value="500" />
           </label>
+        </div>
+
+        </div>
+
+        <div id="text-source-block" class="source-mode-block" hidden>
+          <label>
+            <span class="label-with-tip">Text <span class="tip" tabindex="0" data-tip="Native lettering source. The Lab sends this as text to providers that support text/monogram APIs, not as a rasterized image.">?</span></span>
+            <textarea id="text-input" rows="5" maxlength="500">Zakeke
+Fratic</textarea>
+          </label>
+          <div class="field-row">
+            <label>
+              <span class="label-with-tip">Source name <span class="tip" tabindex="0" data-tip="Used only for run/history labels. It is not sent as artwork.">?</span></span>
+              <input id="text-name" type="text" value="zakeke-text" />
+            </label>
+            <label>
+              <span class="label-with-tip">Height mm <span class="tip" tabindex="0" data-tip="Physical lettering height. Pulse receives it as embroidery points, Wilcom/ZSK receive millimeters.">?</span></span>
+              <input id="text-height-mm" type="number" min="5" max="50" step="0.5" value="12" />
+            </label>
+          </div>
+          <div class="field-row">
+            <label>
+              <span class="label-with-tip">Thread color <span class="tip" tabindex="0" data-tip="Primary thread color sent to the provider-specific text API.">?</span></span>
+              <input id="text-thread-color" type="color" value="#0073cf" />
+            </label>
+          </div>
+          <div class="preview-box text-preview-box">
+            <div id="text-preview" class="text-preview-content"></div>
+          </div>
         </div>
 
         <div id="target-size-row" class="field-row">
@@ -454,6 +491,117 @@
           </details>
         </div>
 
+
+        <div id="wilcom-text-options" class="provider-options" hidden>
+          <div class="control-block">
+            <div class="field-label">Wilcom lettering</div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Alphabet <span class="tip" tabindex="0" data-tip="Wilcom alphabet_name. Must exist in the Wilcom API account; use api/info later to list all available alphabets.">?</span></span><input id="wilcom-text-alphabet" type="text" value="Block2" /></label>
+              <label><span class="label-with-tip">Preview method <span class="tip" tabindex="0" data-tip="Fast calls newLetteringPreview. TrueView calls newDesignTrueview for a fuller preview. Design file mode always calls newDesign.">?</span></span><select id="wilcom-text-preview-method"><option value="fast">Fast lettering preview</option><option value="trueview">TrueView preview</option></select></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">DPI <span class="tip" tabindex="0" data-tip="Wilcom TrueView PNG DPI. Max documented value is 300.">?</span></span><input id="wilcom-text-dpi" type="number" min="1" max="300" step="1" value="160" /></label>
+              <label id="wilcom-text-design-version-block" hidden><span class="label-with-tip">EMB version <span class="tip" tabindex="0" data-tip="Optional Wilcom design_version, sent only when Design file format is EMB.">?</span></span><select id="wilcom-text-design-version"><option value="">Latest</option><option value="Wilcom All-in-One Designs 27.0 (Digital Edition) (*.EMB)">2025 / 27.0</option><option value="Wilcom All-in-One Designs 26.0 (Digital Edition) (*.EMB)">Digital Edition / 26.0</option><option value="Wilcom All-in-One Designs e4.5 (*.EMB)">e4.5</option><option value="Wilcom All-in-One Designs e4.2 (*.EMB)">e4.2</option><option value="Wilcom All-in-One Designs e4.1 (*.EMB)">e4.1</option><option value="Wilcom All-in-One Designs e4.0 (*.EMB)">e4.0</option></select></label>
+            </div>
+            <div class="toggle-list compact">
+              <label class="toggle"><input id="wilcom-text-bold" type="checkbox" /><span>Bold <span class="tip" tabindex="0" data-tip="Wilcom simple_lettering bold flag.">?</span></span></label>
+              <label class="toggle"><input id="wilcom-text-italic" type="checkbox" /><span>Italic <span class="tip" tabindex="0" data-tip="Wilcom simple_lettering italic flag.">?</span></span></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Word spacing <span class="tip" tabindex="0" data-tip="Wilcom word_spacing as ratio of lettering height, e.g. 0.6 means 60%.">?</span></span><input id="wilcom-text-word-spacing" type="number" min="0" max="5" step="0.1" value="0.6" /></label>
+              <label><span class="label-with-tip">Justification <span class="tip" tabindex="0" data-tip="Wilcom multiline justification. Used when text contains multiple lines.">?</span></span><select id="wilcom-text-justification"><option value="centre">Center</option><option value="left">Left</option><option value="right">Right</option><option value="fit">Fit</option></select></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Baseline <span class="tip" tabindex="0" data-tip="Wilcom lettering baseline: horizontal, vertical, circular, or fixed-length baseline with auto-fit.">?</span></span><select id="wilcom-text-baseline"><option value="horizontal">Horizontal</option><option value="vertical">Vertical</option><option value="circle_cw">Circle clockwise</option><option value="circle_ccw">Circle counter-clockwise</option><option value="horizontal_fixed">Horizontal fixed</option><option value="vertical_fixed">Vertical fixed</option></select></label>
+              <label id="wilcom-text-baseline-radius-block"><span class="label-with-tip">Radius mm <span class="tip" tabindex="0" data-tip="Wilcom circular baseline radius. Sent only for circle baselines.">?</span></span><input id="wilcom-text-baseline-radius" type="number" min="20" max="1000" step="1" value="50" /></label>
+            </div>
+            <div id="wilcom-text-fixed-baseline-block" class="field-row">
+              <label><span class="label-with-tip">Baseline length mm <span class="tip" tabindex="0" data-tip="Wilcom fixed baseline length. Sent only for fixed horizontal/vertical baselines.">?</span></span><input id="wilcom-text-baseline-length" type="number" min="20" max="1000" step="1" value="100" /></label>
+              <label><span class="label-with-tip">Auto fit <span class="tip" tabindex="0" data-tip="Wilcom auto_fit_mode. Controls how lettering is squeezed into a fixed baseline.">?</span></span><select id="wilcom-text-auto-fit"><option value="spacing">Spacing</option><option value="letter">Letter width/height</option><option value="letter_prop">Letter proportional</option><option value="whole">Whole</option><option value="whole_prop">Whole proportional</option></select></label>
+            </div>
+          </div>
+        </div>
+
+        <div id="pulse-text-options" class="provider-options" hidden>
+          <div class="control-block">
+            <div class="field-label">PulseID lettering</div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Type <span class="tip" tabindex="0" data-tip="PulseID Lettering Type: normal, monogram, arc or circle.">?</span></span><select id="pulse-text-type"><option value="ltNormal">Normal</option><option value="ltMonogram">Monogram</option><option value="ltArc">Arc</option><option value="ltCircle">Circle</option></select></label>
+              <label><span class="label-with-tip">Font <span class="tip" tabindex="0" data-tip="PulseID Font. Must exist in ListFonts; Block New is the documented default.">?</span></span><input id="pulse-text-font" type="text" value="Block New" /></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Width compression % <span class="tip" tabindex="0" data-tip="PulseID WidthCompression. 100 keeps original width; lower values squeeze text.">?</span></span><input id="pulse-text-width-compression" type="number" min="1" max="300" step="1" value="100" /></label>
+              <label><span class="label-with-tip">Justification <span class="tip" tabindex="0" data-tip="PulseID text justification. jtFitToCurve needs arc baseline points.">?</span></span><select id="pulse-text-justification"><option value="jtCenter">Center</option><option value="jtLeft">Left</option><option value="jtRight">Right</option><option value="jtFillBox">Fill box</option><option value="jtFitToCurve">Fit to curve</option></select></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Envelope <span class="tip" tabindex="0" data-tip="PulseID envelope deformation for lettering.">?</span></span><select id="pulse-text-envelope"><option value="etRectangle">Rectangle</option><option value="etBridgeConcaveTop">Bridge concave top</option><option value="etBridgeConcaveBottom">Bridge concave bottom</option><option value="etBridgeConvexTop">Bridge convex top</option><option value="etBridgeConvexBottom">Bridge convex bottom</option><option value="etDoubleConcaveBridges">Double concave</option><option value="etDoubleConvexBridges">Double convex</option><option value="etPennantRight">Pennant right</option><option value="etPennantLeft">Pennant left</option></select></label>
+              <label><span class="label-with-tip">Needle <span class="tip" tabindex="0" data-tip="PulseID Needle is 0-based. 0 means first needle.">?</span></span><input id="pulse-text-needle" type="number" min="0" step="1" value="0" /></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Recipe <span class="tip" tabindex="0" data-tip="PulseID Recipe for lettering render/generate. Normal is the documented default.">?</span></span><input id="pulse-text-recipe" type="text" value="Normal" /></label>
+              <label><span class="label-with-tip">Machine format <span class="tip" tabindex="0" data-tip="PulseID MachineFormat parameter, distinct from production file extension. Tajima is the documented default.">?</span></span><input id="pulse-text-machine-format" type="text" value="Tajima" /></label>
+            </div>
+            <div class="toggle-list compact">
+              <label class="toggle"><input id="pulse-text-remove-unused-needles" type="checkbox" checked /><span>Remove unused needles</span></label>
+              <label class="toggle"><input id="pulse-text-rainbow" type="checkbox" /><span>Rainbow text <span class="tip" tabindex="0" data-tip="PulseID inserts color changes per letter using RainbowColors.">?</span></span></label>
+              <label class="toggle"><input id="pulse-text-transparent-preview" type="checkbox" checked /><span>Transparent preview</span></label>
+              <label class="toggle"><input id="pulse-text-lighten-shadows" type="checkbox" /><span>Lighten shadows</span></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Render width <span class="tip" tabindex="0" data-tip="PulseID preview image width in pixels. Preview only.">?</span></span><input id="pulse-text-render-width" type="number" min="100" step="10" value="900" /></label>
+              <label><span class="label-with-tip">Render height <span class="tip" tabindex="0" data-tip="PulseID preview image height in pixels. Preview only.">?</span></span><input id="pulse-text-render-height" type="number" min="100" step="10" value="420" /></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Padding <span class="tip" tabindex="0" data-tip="Pixel padding around the rendered text preview.">?</span></span><input id="pulse-text-render-padding" type="number" min="0" step="1" value="30" /></label>
+              <label id="pulse-text-decoration-block"><span class="label-with-tip">Decoration <span class="tip" tabindex="0" data-tip="PulseID monogram Decoration. Sent only for ltMonogram.">?</span></span><input id="pulse-text-decoration" type="text" value="*" /></label>
+            </div>
+            <div id="pulse-text-rainbow-block" class="control-block">
+              <label><span class="label-with-tip">Rainbow colors <span class="tip" tabindex="0" data-tip="Comma-separated hex colors sent as PulseID RainbowColors when Rainbow text is enabled.">?</span></span><input id="pulse-text-rainbow-colors" type="text" value="#0073cf,#64c05a,#ff5b00" /></label>
+            </div>
+            <div id="pulse-text-arc-block" class="control-block">
+              <div class="field-label">Arc baseline points</div>
+              <div class="field-row"><label>X1<input id="pulse-text-x1" type="number" value="-1000" /></label><label>Y1<input id="pulse-text-y1" type="number" value="0" /></label></div>
+              <div class="field-row"><label>X2<input id="pulse-text-x2" type="number" value="0" /></label><label>Y2<input id="pulse-text-y2" type="number" value="150" /></label></div>
+              <div class="field-row"><label>X3<input id="pulse-text-x3" type="number" value="1000" /></label><label>Y3<input id="pulse-text-y3" type="number" value="0" /></label></div>
+            </div>
+            <div id="pulse-text-circle-block" class="control-block">
+              <label><span class="label-with-tip">Bottom text <span class="tip" tabindex="0" data-tip="PulseID BottomText, sent only for ltCircle.">?</span></span><input id="pulse-text-bottom-text" type="text" value="" /></label>
+              <div class="field-row"><label>Center X<input id="pulse-text-center-x" type="number" value="0" /></label><label>Center Y<input id="pulse-text-center-y" type="number" value="0" /></label></div>
+              <div class="field-row"><label>Ref X<input id="pulse-text-ref-x" type="number" value="0" /></label><label>Ref Y<input id="pulse-text-ref-y" type="number" value="-700" /></label></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="melco-text-options" class="provider-options" hidden>
+          <div class="unavailable-note">Melco text standalone is not enabled in this Lab yet. We need a backend lettering endpoint that does not require embedding Live Designer/Fusion UI.</div>
+        </div>
+
+        <div id="zsk-text-options" class="provider-options" hidden>
+          <div class="control-block">
+            <div class="field-label">ZSK text / monogram</div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Font family <span class="tip" tabindex="0" data-tip="ZSK FontFamily. Use GetFontList later to discover available fonts on the service.">?</span></span><input id="zsk-text-font-family" type="text" value="Arial" /></label>
+              <label><span class="label-with-tip">Stitch preset <span class="tip" tabindex="0" data-tip="ZSK TextStitchParameter preset returned by GetFontSettings.">?</span></span><select id="zsk-text-stitch-parameter"><option value="Premium">Premium</option><option value="Default/Custom">Default/Custom</option><option value="Small">Small</option><option value="Big">Big</option><option value="Budget">Budget</option><option value="Dense">Dense</option></select></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Used needle <span class="tip" tabindex="0" data-tip="ZSK UsedNeedle. 1 means the first needle in the Needle list.">?</span></span><input id="zsk-text-used-needle" type="number" min="1" step="1" value="1" /></label>
+              <label><span class="label-with-tip">Bend % <span class="tip" tabindex="0" data-tip="ZSK TextBendProcent, -100 to 100. 0 is straight; positive/negative bend text in opposite directions.">?</span></span><input id="zsk-text-bend" type="number" min="-100" max="100" step="1" value="0" /></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Alignment <span class="tip" tabindex="0" data-tip="ZSK HorizontalAlignment: left, center, right.">?</span></span><select id="zsk-text-alignment"><option value="1">Center</option><option value="0">Left</option><option value="2">Right</option></select></label>
+              <label><span class="label-with-tip">Monogram style <span class="tip" tabindex="0" data-tip="ZSK MonogramStyle numeric value. 0 uses normal text behavior.">?</span></span><input id="zsk-text-monogram-style" type="number" min="0" step="1" value="0" /></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">X pos mm <span class="tip" tabindex="0" data-tip="ZSK XposMM for the text block.">?</span></span><input id="zsk-text-x-pos" type="number" step="0.1" value="0" /></label>
+              <label><span class="label-with-tip">Y pos mm <span class="tip" tabindex="0" data-tip="ZSK YposMM for the text block.">?</span></span><input id="zsk-text-y-pos" type="number" step="0.1" value="0" /></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Line spacing <span class="tip" tabindex="0" data-tip="Optional comma-separated ZSK LineSpacing values. For multiline text, count should be number of lines minus one.">?</span></span><input id="zsk-text-line-spacing" type="text" value="" placeholder="e.g. 12" /></label>
+              <label><span class="label-with-tip">PNG resolution <span class="tip" tabindex="0" data-tip="ZSK PngResolution for CreatePNG preview.">?</span></span><input id="zsk-text-png-resolution" type="number" min="72" step="1" value="254" /></label>
+            </div>
+          </div>
+        </div>
+
         <div id="status-box" class="status-box">Idle</div>
       </section>
 
@@ -498,7 +646,10 @@
             <h2 id="history-title">History</h2>
             <span id="history-summary" class="run-id"></span>
           </div>
-          <button id="history-close" class="ghost-button" type="button">Close</button>
+          <div class="dialog-actions">
+            <button id="report-button" class="ghost-button" type="button" title="Create a complete HTML report from saved comparisons and individual executions">Full history report</button>
+            <button id="history-close" class="ghost-button" type="button">Close</button>
+          </div>
         </div>
         <div class="history-layout">
           <article class="history-section">
@@ -526,8 +677,16 @@
           <button id="compare-close" class="ghost-button" type="button">Close</button>
         </div>
 
+        <div class="control-block source-type-block">
+          <div class="field-label">Source type</div>
+          <div class="segmented">
+            <button class="segment active" type="button" data-compare-source-type="image">Images</button>
+            <button class="segment" type="button" data-compare-source-type="text">Text</button>
+          </div>
+        </div>
+
         <div class="compare-layout">
-          <section class="compare-step" aria-labelledby="compare-images-title">
+          <section id="compare-image-source-step" class="compare-step" aria-labelledby="compare-images-title">
             <h3 id="compare-images-title">Images</h3>
             <label class="drop-zone compare-upload" for="compare-file-input">
               <input id="compare-file-input" type="file" multiple accept="image/png,image/jpeg,image/bmp,image/gif,image/tiff,application/pdf,application/postscript,.pdf,.eps" />
@@ -535,6 +694,19 @@
               <span id="compare-upload-list">PNG, JPG, BMP, GIF, TIF, PDF, EPS</span>
             </label>
             <div id="compare-sample-grid" class="sample-grid compare-sample-grid"></div>
+          </section>
+
+          <section id="compare-text-source-step" class="compare-step" aria-labelledby="compare-text-title" hidden>
+            <h3 id="compare-text-title">Text</h3>
+            <label>
+              <span class="label-with-tip">Text to compare <span class="tip" tabindex="0" data-tip="The same text is sent to every selected provider. Multiline text is supported when the provider supports it.">?</span></span>
+              <textarea id="compare-text-input" rows="5" maxlength="500" placeholder="Enter the text to embroider">Zakeke</textarea>
+            </label>
+            <div class="field-row">
+              <label><span class="label-with-tip">Source name <span class="tip" tabindex="0" data-tip="Used in history and filenames; it does not affect stitches.">?</span></span><input id="compare-text-name" type="text" value="text-comparison" /></label>
+              <label><span class="label-with-tip">Height mm <span class="tip" tabindex="0" data-tip="Requested lettering height sent through each provider's text API.">?</span></span><input id="compare-text-height-mm" type="number" min="1" max="100" step="0.5" value="10" /></label>
+            </div>
+            <label><span class="label-with-tip">Thread color <span class="tip" tabindex="0" data-tip="Common thread color mapped to each provider-specific request.">?</span></span><input id="compare-text-thread-color" type="color" value="#0073cf" /></label>
           </section>
 
           <section class="compare-step" aria-labelledby="compare-services-title">
@@ -549,7 +721,7 @@
             </label>
           </section>
 
-          <section class="compare-step compare-run-settings" aria-labelledby="compare-run-settings-title">
+          <section id="compare-image-run-settings" class="compare-step compare-run-settings" aria-labelledby="compare-run-settings-title">
             <h3 id="compare-run-settings-title">Run settings</h3>
             <div class="field-row">
               <label>
@@ -574,7 +746,7 @@
           </section>
         </div>
 
-        <section class="compare-provider-options" aria-labelledby="compare-options-title">
+        <section id="compare-image-provider-options" class="compare-provider-options" aria-labelledby="compare-options-title">
           <h3 id="compare-options-title">Provider options</h3>
 
           <article id="compare-wilcom-options" class="compare-provider-settings" hidden>
@@ -854,6 +1026,81 @@
           </article>
         </section>
 
+
+        <section id="compare-text-provider-options" class="compare-provider-options" aria-labelledby="compare-text-options-title" hidden>
+          <h3 id="compare-text-options-title">Text provider options</h3>
+
+          <article id="compare-wilcom-text-options" class="compare-provider-settings" hidden>
+            <div class="compare-provider-settings-head"><strong>Wilcom EWA lettering</strong><span>Only Wilcom text requests use these settings.</span></div>
+            <div class="field-row">
+              <label id="compare-wilcom-text-format-block"><span class="label-with-tip">Design format <span class="tip" tabindex="0" data-tip="Sent only to Wilcom in Design file mode.">?</span></span><select id="compare-wilcom-text-format"><option value="emb">EMB</option><option value="dst">DST</option><option value="pes">PES</option><option value="exp">EXP</option><option value="jef">JEF</option></select></label>
+              <label><span class="label-with-tip">Alphabet <span class="tip" tabindex="0" data-tip="Wilcom alphabet_name installed for the EWA account.">?</span></span><input id="compare-wilcom-text-alphabet" type="text" value="Block2" /></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Preview method <span class="tip" tabindex="0" data-tip="Fast uses newLetteringPreview; TrueView uses newDesignTrueview.">?</span></span><select id="compare-wilcom-text-preview-method"><option value="fast">Fast lettering preview</option><option value="trueview">TrueView preview</option></select></label>
+              <label><span class="label-with-tip">DPI <span class="tip" tabindex="0" data-tip="Wilcom preview DPI; documented maximum is 300.">?</span></span><input id="compare-wilcom-text-dpi" type="number" min="1" max="300" step="1" value="160" /></label>
+            </div>
+            <div class="toggle-list compact">
+              <label class="toggle"><input id="compare-wilcom-text-bold" type="checkbox" /><span>Bold</span></label>
+              <label class="toggle"><input id="compare-wilcom-text-italic" type="checkbox" /><span>Italic</span></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Word spacing <span class="tip" tabindex="0" data-tip="Wilcom word_spacing as a ratio of lettering height.">?</span></span><input id="compare-wilcom-text-word-spacing" type="number" min="0" max="5" step="0.1" value="0.6" /></label>
+              <label><span class="label-with-tip">Justification <span class="tip" tabindex="0" data-tip="Wilcom multiline justification.">?</span></span><select id="compare-wilcom-text-justification"><option value="centre">Center</option><option value="left">Left</option><option value="right">Right</option><option value="fit">Fit</option></select></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Baseline <span class="tip" tabindex="0" data-tip="Wilcom lettering baseline.">?</span></span><select id="compare-wilcom-text-baseline"><option value="horizontal">Horizontal</option><option value="vertical">Vertical</option><option value="circle_cw">Circle clockwise</option><option value="circle_ccw">Circle counter-clockwise</option></select></label>
+              <label id="compare-wilcom-text-baseline-radius-block" hidden><span class="label-with-tip">Radius mm <span class="tip" tabindex="0" data-tip="Sent only for circular baselines.">?</span></span><input id="compare-wilcom-text-baseline-radius" type="number" min="20" max="1000" step="1" value="50" /></label>
+            </div>
+          </article>
+
+          <article id="compare-pulse-text-options" class="compare-provider-settings" hidden>
+            <div class="compare-provider-settings-head"><strong>PulseID lettering</strong><span>Only PulseID text requests use these settings.</span></div>
+            <div class="field-row">
+              <label id="compare-pulse-text-format-block"><span class="label-with-tip">Design format <span class="tip" tabindex="0" data-tip="PulseID Generate format, sent only in Design file mode.">?</span></span><select id="compare-pulse-text-format"><option value="dst">DST</option><option value="pes">PES</option><option value="pxf">PXF</option><option value="tcf">TCF</option><option value="z00">Z00</option><option value="pcf">PCF</option></select></label>
+              <label><span class="label-with-tip">Type <span class="tip" tabindex="0" data-tip="PulseID normal lettering or monogram.">?</span></span><select id="compare-pulse-text-type"><option value="ltNormal">Normal</option><option value="ltMonogram">Monogram</option></select></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Font <span class="tip" tabindex="0" data-tip="PulseID font installed on the service.">?</span></span><input id="compare-pulse-text-font" type="text" value="Block New" /></label>
+              <label><span class="label-with-tip">Width compression % <span class="tip" tabindex="0" data-tip="100 keeps width; lower values squeeze the text.">?</span></span><input id="compare-pulse-text-width-compression" type="number" min="1" max="300" step="1" value="100" /></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Justification <span class="tip" tabindex="0" data-tip="PulseID text justification.">?</span></span><select id="compare-pulse-text-justification"><option value="jtCenter">Center</option><option value="jtLeft">Left</option><option value="jtRight">Right</option><option value="jtFillBox">Fill box</option></select></label>
+              <label><span class="label-with-tip">Envelope <span class="tip" tabindex="0" data-tip="PulseID lettering deformation.">?</span></span><select id="compare-pulse-text-envelope"><option value="etRectangle">Rectangle</option><option value="etBridgeConcaveTop">Bridge concave top</option><option value="etBridgeConcaveBottom">Bridge concave bottom</option><option value="etBridgeConvexTop">Bridge convex top</option><option value="etBridgeConvexBottom">Bridge convex bottom</option><option value="etDoubleConcaveBridges">Double concave</option><option value="etDoubleConvexBridges">Double convex</option><option value="etPennantRight">Pennant right</option><option value="etPennantLeft">Pennant left</option></select></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Recipe <span class="tip" tabindex="0" data-tip="PulseID recipe used for render and generation.">?</span></span><input id="compare-pulse-text-recipe" type="text" value="Normal" /></label>
+              <label><span class="label-with-tip">Machine format <span class="tip" tabindex="0" data-tip="PulseID MachineFormat, separate from file extension.">?</span></span><input id="compare-pulse-text-machine-format" type="text" value="Tajima" /></label>
+            </div>
+            <label id="compare-pulse-text-decoration-block" hidden><span class="label-with-tip">Decoration <span class="tip" tabindex="0" data-tip="Sent only for monogram lettering.">?</span></span><input id="compare-pulse-text-decoration" type="text" value="*" /></label>
+            <div class="toggle-list compact">
+              <label class="toggle"><input id="compare-pulse-text-remove-unused-needles" type="checkbox" checked /><span>Remove unused needles</span></label>
+              <label class="toggle"><input id="compare-pulse-text-transparent-preview" type="checkbox" checked /><span>Transparent preview</span></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Render width <span class="tip" tabindex="0" data-tip="PulseID preview width in pixels.">?</span></span><input id="compare-pulse-text-render-width" type="number" min="100" step="10" value="900" /></label>
+              <label><span class="label-with-tip">Render height <span class="tip" tabindex="0" data-tip="PulseID preview height in pixels.">?</span></span><input id="compare-pulse-text-render-height" type="number" min="100" step="10" value="420" /></label>
+            </div>
+            <label><span class="label-with-tip">Padding <span class="tip" tabindex="0" data-tip="Pixel padding around the PulseID preview.">?</span></span><input id="compare-pulse-text-render-padding" type="number" min="0" step="1" value="30" /></label>
+          </article>
+
+          <article id="compare-zsk-text-options" class="compare-provider-settings" hidden>
+            <div class="compare-provider-settings-head"><strong>ZSK text / monogram</strong><span>Only ZSK text requests use these settings.</span></div>
+            <div class="field-row">
+              <label id="compare-zsk-text-format-block"><span class="label-with-tip">Design format <span class="tip" tabindex="0" data-tip="ZSK RequestType used only in Design file mode.">?</span></span><select id="compare-zsk-text-format"><option value="z00">Z00 / TC</option><option value="dst">DST</option><option value="tbf">TBF</option><option value="dsz">DSZ</option></select></label>
+              <label><span class="label-with-tip">Font family <span class="tip" tabindex="0" data-tip="ZSK FontFamily installed on the renderer.">?</span></span><input id="compare-zsk-text-font-family" type="text" value="Arial" /></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Stitch preset <span class="tip" tabindex="0" data-tip="ZSK TextStitchParameter preset.">?</span></span><select id="compare-zsk-text-stitch-parameter"><option value="Premium">Premium</option><option value="Default/Custom">Default/Custom</option><option value="Small">Small</option><option value="Big">Big</option><option value="Budget">Budget</option><option value="Dense">Dense</option></select></label>
+              <label><span class="label-with-tip">Bend % <span class="tip" tabindex="0" data-tip="ZSK TextBendProcent from -100 to 100.">?</span></span><input id="compare-zsk-text-bend" type="number" min="-100" max="100" step="1" value="0" /></label>
+            </div>
+            <div class="field-row">
+              <label><span class="label-with-tip">Alignment <span class="tip" tabindex="0" data-tip="ZSK horizontal text alignment.">?</span></span><select id="compare-zsk-text-alignment"><option value="1">Center</option><option value="0">Left</option><option value="2">Right</option></select></label>
+              <label><span class="label-with-tip">PNG resolution <span class="tip" tabindex="0" data-tip="ZSK PngResolution for CreatePNG.">?</span></span><input id="compare-zsk-text-png-resolution" type="number" min="72" step="1" value="254" /></label>
+            </div>
+            <label><span class="label-with-tip">Line spacing <span class="tip" tabindex="0" data-tip="Optional comma-separated ZSK LineSpacing values for multiline text.">?</span></span><input id="compare-zsk-text-line-spacing" type="text" value="" placeholder="e.g. 12" /></label>
+          </article>
+        </section>
         <div class="compare-footer">
           <span id="compare-status" class="status-inline">Idle</span>
           <button id="compare-run-button" class="primary-button" type="button" disabled>Run comparison</button>
@@ -864,3 +1111,4 @@
     <script src="/app.js" type="module"></script>
   </body>
 </html>
+

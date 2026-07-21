@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Embroidery production output formats - Provider assessment</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #17212b;
+        --muted: #5e6872;
+        --line: #d9dee3;
+        --paper: #ffffff;
+        --soft: #f4f6f7;
+        --teal: #087f72;
+        --teal-soft: #e6f4f1;
+        --blue: #1769aa;
+        --blue-soft: #eaf2f9;
+        --amber: #9a5a00;
+        --amber-soft: #fff4df;
+        --red: #a73832;
+        --red-soft: #faecea;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: var(--paper);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 15px;
+        line-height: 1.55;
+      }
+      a { color: var(--blue); text-underline-offset: 2px; }
+      code {
+        padding: 1px 5px;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        background: var(--soft);
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 0.9em;
+      }
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 54px;
+        padding: 8px clamp(18px, 4vw, 56px);
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.96);
+      }
+      .topbar strong { font-size: 14px; }
+      .topbar nav { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+      .topbar nav a { color: var(--muted); font-size: 13px; font-weight: 650; text-decoration: none; }
+      .print-button {
+        min-height: 34px;
+        padding: 6px 11px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        color: var(--ink);
+        background: white;
+        cursor: pointer;
+        font-weight: 700;
+      }
+      header.report-header {
+        padding: 58px clamp(20px, 7vw, 96px) 46px;
+        color: white;
+        background: #17212b;
+      }
+      .eyebrow {
+        margin: 0 0 12px;
+        color: #69d0c3;
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+      h1 {
+        max-width: 980px;
+        margin: 0;
+        font-size: clamp(32px, 5vw, 58px);
+        line-height: 1.05;
+        letter-spacing: 0;
+      }
+      .subtitle { max-width: 880px; margin: 20px 0 0; color: #d9e0e5; font-size: 18px; }
+      .meta { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 28px; color: #aebbc5; font-size: 13px; }
+      main { display: block; }
+      section {
+        padding: 48px clamp(20px, 7vw, 96px);
+        border-bottom: 1px solid var(--line);
+      }
+      section:nth-child(even) { background: var(--soft); }
+      .section-inner { width: min(1180px, 100%); margin: 0 auto; }
+      h2 { margin: 0 0 10px; font-size: 27px; line-height: 1.2; }
+      h3 { margin: 28px 0 8px; font-size: 18px; }
+      p { margin: 8px 0 14px; }
+      .lead { max-width: 900px; color: var(--muted); font-size: 17px; }
+      .verdict {
+        display: grid;
+        grid-template-columns: 190px minmax(0, 1fr);
+        margin-top: 26px;
+        border: 1px solid #8fc9c2;
+        border-radius: 8px;
+        overflow: hidden;
+        background: white;
+      }
+      .verdict-label {
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        color: #075d54;
+        background: var(--teal-soft);
+        font-size: 14px;
+        font-weight: 850;
+        text-transform: uppercase;
+      }
+      .verdict-body { padding: 22px 26px; }
+      .verdict-body strong { color: #075d54; }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1px;
+        margin-top: 28px;
+        border: 1px solid var(--line);
+        background: var(--line);
+      }
+      .stat { min-height: 126px; padding: 18px; background: white; }
+      .stat b { display: block; color: var(--teal); font-size: 24px; }
+      .stat span { display: block; margin-top: 5px; color: var(--muted); font-size: 13px; }
+      .table-wrap { margin-top: 22px; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+      table { width: 100%; border-collapse: collapse; background: white; }
+      th, td { padding: 13px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+      th { color: #34414c; background: #edf1f3; font-size: 12px; text-transform: uppercase; }
+      tr:last-child td { border-bottom: 0; }
+      td:first-child, th:first-child { min-width: 130px; }
+      .tag {
+        display: inline-block;
+        margin: 2px 4px 2px 0;
+        padding: 2px 7px;
+        border: 1px solid #aebbc5;
+        border-radius: 999px;
+        color: #33414d;
+        background: white;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 12px;
+        font-weight: 750;
+      }
+      .status { font-weight: 800; }
+      .status.good { color: var(--teal); }
+      .status.warn { color: var(--amber); }
+      .status.risk { color: var(--red); }
+      .format-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 22px;
+      }
+      .format-group { padding: 20px; border: 1px solid var(--line); border-radius: 8px; background: white; }
+      .format-group h3 { margin-top: 0; }
+      .format-group p { color: var(--muted); }
+      .callout { margin: 24px 0 0; padding: 17px 19px; border-left: 4px solid var(--amber); background: var(--amber-soft); }
+      .callout.risk { border-left-color: var(--red); background: var(--red-soft); }
+      .callout.info { border-left-color: var(--blue); background: var(--blue-soft); }
+      ul, ol { margin: 10px 0 16px; padding-left: 22px; }
+      li { margin: 7px 0; }
+      .checklist { columns: 2; column-gap: 48px; }
+      .checklist li { break-inside: avoid; }
+      .provider-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+      .provider-heading span { color: var(--muted); font-size: 13px; }
+      .scorecard td:not(:first-child), .scorecard th:not(:first-child) { text-align: center; }
+      .score { font-weight: 850; }
+      .score.yes { color: var(--teal); }
+      .score.partial { color: var(--amber); }
+      .score.no { color: var(--red); }
+      .sources { columns: 2; column-gap: 46px; }
+      .sources li { break-inside: avoid; margin-bottom: 11px; }
+      footer { padding: 28px clamp(20px, 7vw, 96px); color: #c5d0d8; background: #17212b; font-size: 13px; }
+
+      @media (max-width: 880px) {
+        .topbar nav { display: none; }
+        .verdict { grid-template-columns: 1fr; }
+        .verdict-label { place-items: start; }
+        .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .format-grid { grid-template-columns: 1fr; }
+        .checklist, .sources { columns: 1; }
+      }
+      @media (max-width: 520px) {
+        .stats { grid-template-columns: 1fr; }
+        .topbar strong { max-width: 220px; }
+        h1 { font-size: 34px; }
+        section { padding-top: 36px; padding-bottom: 36px; }
+      }
+      @media print {
+        .topbar { display: none; }
+        header.report-header { padding: 34px 30px; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+        section { padding: 28px 30px; break-inside: auto; }
+        h2, h3, .verdict, .format-group, table { break-inside: avoid; }
+        a { color: inherit; text-decoration: none; }
+        .format-grid { grid-template-columns: repeat(3, 1fr); }
+        .table-wrap { overflow: visible; }
+        body { font-size: 12px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <strong>EmbroideryLab / Output assessment</strong>
+      <nav aria-label="Report sections">
+        <a href="#summary">Summary</a>
+        <a href="#formats">Formats</a>
+        <a href="#market">Market</a>
+        <a href="#providers">Providers</a>
+        <a href="#evaluation">Evaluation</a>
+        <a href="#recommendation">Recommendation</a>
+      </nav>
+      <button class="print-button" type="button" onclick="window.print()">Print / PDF</button>
+    </div>
+
+    <header class="report-header">
+      <p class="eyebrow">Provider assessment / production readiness</p>
+      <h1>Embroidery output formats for production</h1>
+      <p class="subtitle">
+        Stato dell'arte, formati macchina, criteri di valutazione e confronto tra Wilcom,
+        PulseID, Melco Cloud e ZSK per una futura integrazione in Zakeke.
+      </p>
+      <div class="meta">
+        <span>Versione: 1.0</span>
+        <span>Aggiornato: 20 luglio 2026</span>
+        <span>Ambito: image e text digitization</span>
+        <span>Nessuna credenziale inclusa</span>
+      </div>
+    </header>
+
+    <main>
+      <section id="summary">
+        <div class="section-inner">
+          <h2>Executive summary</h2>
+          <p class="lead">
+            Una preview realistica e un file da ricamo risolvono due problemi diversi. La preview
+            serve al cliente; il file di produzione serve alla macchina e all'operatore. Per Zakeke
+            il risultato corretto non e un solo file, ma un pacchetto versionato e riproducibile.
+          </p>
+
+          <div class="verdict">
+            <div class="verdict-label">Raccomandazione</div>
+            <div class="verdict-body">
+              <strong>Richiedere a ogni provider tre output minimi:</strong> preview PNG trasparente,
+              master ricco o nativo quando disponibile, e file macchina DST come baseline. A questi
+              vanno aggiunti metadata JSON e palette/needle mapping. DST da solo e molto compatibile,
+              ma perde informazioni importanti e non deve essere considerato il master del design.
+            </div>
+          </div>
+
+          <div class="stats" aria-label="Key findings">
+            <div class="stat"><b>DST</b><span>Baseline piu interoperabile, ma con metadata e colori limitati.</span></div>
+            <div class="stat"><b>PNG</b><span>Preview e approvazione; non e un file utilizzabile per ricamare.</span></div>
+            <div class="stat"><b>Native</b><span>EMB, PXF, OFM o Z00 conservano piu valore per modifica e produzione.</span></div>
+            <div class="stat"><b>Sew-out</b><span>Il test su tessuto resta il criterio finale, non la sola immagine TrueView.</span></div>
+          </div>
+
+          <div class="callout risk">
+            <strong>Decisione da evitare:</strong> scegliere il provider solo sulla qualita visiva della
+            preview. Due preview simili possono corrispondere a file macchina molto diversi per densita,
+            sottofondo, salti, tagli, sequenza colori e robustezza sul tessuto.
+          </div>
+        </div>
+      </section>
+
+      <section id="state-of-art">
+        <div class="section-inner">
+          <h2>Stato dell'arte</h2>
+          <p class="lead">
+            La digitalizzazione trasforma artwork e testo in istruzioni di punto: tipo di punto,
+            direzione, densita, underlay, compensazione, percorso del filo e cambi colore. Il risultato
+            dipende anche da prodotto, posizione e tessuto; un file ottimizzato per cappellino non e
+            necessariamente corretto per una polo o una felpa.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Livello</th><th>Scopo</th><th>Esempi</th><th>Regola per Zakeke</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>Artwork</strong></td>
+                  <td>Input visivo prima della digitalizzazione.</td>
+                  <td><span class="tag">PNG</span><span class="tag">JPG</span><span class="tag">SVG</span><span class="tag">PDF</span><span class="tag">EPS</span></td>
+                  <td>Conservare sempre l'originale e il preprocessing applicato.</td>
+                </tr>
+                <tr>
+                  <td><strong>Preview</strong></td>
+                  <td>Approvazione cliente e simulazione del filo.</td>
+                  <td><span class="tag">PNG</span><span class="tag">JPG</span></td>
+                  <td>Preferire PNG trasparente, dimensioni fisiche e palette associate.</td>
+                </tr>
+                <tr>
+                  <td><strong>Master ricco</strong></td>
+                  <td>Editing, ridimensionamento controllato, rigenerazione di output.</td>
+                  <td><span class="tag">EMB</span><span class="tag">PXF</span><span class="tag">OFM</span><span class="tag">Z00 / TC</span></td>
+                  <td>Archiviare quando il contratto/licenza ne consente uso e portabilita.</td>
+                </tr>
+                <tr>
+                  <td><strong>Machine stitch</strong></td>
+                  <td>Istruzioni consumate dalla macchina o dal software di produzione.</td>
+                  <td><span class="tag">DST</span><span class="tag">EXP</span><span class="tag">PES</span><span class="tag">JEF</span><span class="tag">TBF</span><span class="tag">DSZ</span></td>
+                  <td>Generare in base alla flotta del fulfillment partner, non per preferenza astratta.</td>
+                </tr>
+                <tr>
+                  <td><strong>Metadata / sidecar</strong></td>
+                  <td>Colori, aghi, stitch count, trims, dimensioni e tracciabilita.</td>
+                  <td><span class="tag">JSON</span><span class="tag">INI</span><span class="tag">INF</span><span class="tag">TCH</span></td>
+                  <td>Definire un JSON normalizzato Zakeke indipendente dal provider.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Wilcom descrive esplicitamente la differenza tra <code>.EMB</code>, che conserva oggetti e
+            proprieta, e un machine file come <code>.DST</code>. ZSK definisce DST il codice piu noto e
+            diffuso, ma sottolinea che contiene essenzialmente comandi di punto e non conserva colori,
+            vettori o thumbnail. Questa e la ragione tecnica per mantenere sia un master sia un export.
+          </p>
+        </div>
+      </section>
+
+      <section id="formats">
+        <div class="section-inner">
+          <h2>Possibili file di output</h2>
+          <p class="lead">Le estensioni non sono equivalenti. Vanno lette in base a interoperabilita, ricchezza e macchina target.</p>
+
+          <div class="format-grid">
+            <article class="format-group">
+              <h3>Preview raster</h3>
+              <p><span class="tag">PNG</span><span class="tag">JPG</span></p>
+              <p>Utile per configuratore, approvazione, storico e confronto. PNG supporta trasparenza; JPG no.</p>
+              <p><strong>Non contiene:</strong> sequenza macchina affidabile, underlay modificabile o istruzioni operative.</p>
+            </article>
+            <article class="format-group">
+              <h3>Master provider-native</h3>
+              <p><span class="tag">EMB</span><span class="tag">PXF</span><span class="tag">OFM</span><span class="tag">Z00</span></p>
+              <p>Massimo valore per editabilita, metadati, colori e rigenerazione. Riduce la perdita informativa.</p>
+              <p><strong>Rischio:</strong> lock-in del software/provider e compatibilita di versione.</p>
+            </article>
+            <article class="format-group">
+              <h3>Machine / stitch files</h3>
+              <p><span class="tag">DST</span><span class="tag">EXP</span><span class="tag">PES</span><span class="tag">JEF</span><span class="tag">TBF</span><span class="tag">DSZ</span></p>
+              <p>Destinati alla macchina o al workflow del ricamificio. Il formato corretto dipende dalla flotta.</p>
+              <p><strong>Rischio:</strong> perdita di informazioni durante export e conversioni successive.</p>
+            </article>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Formato</th><th>Ruolo</th><th>Punti forti</th><th>Limiti / rischi</th><th>Uso consigliato</th></tr></thead>
+              <tbody>
+                <tr><td><code>PNG</code></td><td>Preview</td><td>Trasparenza, browser-ready, semplice da confrontare.</td><td>Non aziona una macchina.</td><td>Preview cliente e QA visivo.</td></tr>
+                <tr><td><code>EMB</code></td><td>Master Wilcom</td><td>Oggetti, stitch properties, underlay, compensazione, colori e artwork.</td><td>Proprietario; versioni da concordare.</td><td>Master quando Wilcom e parte del workflow.</td></tr>
+                <tr><td><code>PXF</code></td><td>Master Pulse</td><td>Design/componenti Pulse, utile per template e rigenerazione.</td><td>Ecosistema Pulse/Tajima software.</td><td>Master Pulse insieme agli export macchina.</td></tr>
+                <tr><td><code>OFM</code></td><td>Master Melco</td><td>Wireframe, colori e impostazioni macchina nello stesso file.</td><td>Proprietario Melco; verificare versione e portabilita API.</td><td>Produzione Melco e archivio modificabile.</td></tr>
+                <tr><td><code>Z00 / TC</code></td><td>Native ZSK</td><td>Piu dati e funzioni ZSK rispetto a DST; raccomandato da ZSK per le proprie macchine.</td><td>Minor universalita fuori dall'ecosistema ZSK.</td><td>Flotte ZSK, piu DST come fallback.</td></tr>
+                <tr><td><code>DST</code></td><td>Machine baseline</td><td>Molto diffuso e leggibile da numerose macchine.</td><td>Colori e semantica poveri; stitch commands, non un master.</td><td>Formato minimo comune piu sidecar colori/aghi.</td></tr>
+                <tr><td><code>EXP</code></td><td>Machine Melco</td><td>Comune in workflow Melco; Wilcom lo esporta.</td><td>Spesso richiede file laterali per informazioni colore.</td><td>Quando richiesto dal ricamificio Melco.</td></tr>
+                <tr><td><code>PES</code></td><td>Machine Brother</td><td>Supporto diretto su molte macchine Brother.</td><td>Compatibilita/versione dipende dal modello.</td><td>Consumer/prosumer Brother o partner che lo richiede.</td></tr>
+                <tr><td><code>JEF</code></td><td>Machine Janome</td><td>Formato macchina dedicato.</td><td>Non e baseline universale.</td><td>Solo per target Janome/compatibili.</td></tr>
+                <tr><td><code>TBF / DSZ</code></td><td>Machine Tajima/ZSK</td><td>Conservano funzioni utili nei rispettivi workflow.</td><td>Supporto piu specifico della flotta.</td><td>Quando endpoint e macchina target coincidono.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="market">
+        <div class="section-inner">
+          <h2>Cosa cerca il mercato</h2>
+          <p class="lead">
+            Il mercato non cerca semplicemente "un DST". Cerca un output che entri nel workflow del
+            ricamificio senza correzioni costose, con prevedibilita di tempi, costi e qualita.
+          </p>
+          <ul class="checklist">
+            <li><strong>Compatibilita macchina:</strong> DST come base, piu formato nativo quando la flotta e nota.</li>
+            <li><strong>Stitch count affidabile:</strong> necessario per prezzo, tempo macchina e capacita.</li>
+            <li><strong>Colori e aghi:</strong> palette reale, thread chart e sequenza di caricamento.</li>
+            <li><strong>Pochi interventi manuali:</strong> trims, jumps e color changes devono essere ragionevoli.</li>
+            <li><strong>Output per prodotto:</strong> cappellino, capo piano, patch e 3D puff possono richiedere file diversi.</li>
+            <li><strong>Ridimensionamento controllato:</strong> non basta scalare i punti; spesso serve ridigitalizzare.</li>
+            <li><strong>Preview coerente:</strong> colori, proporzioni e bounding box devono corrispondere al file macchina.</li>
+            <li><strong>Tracciabilita:</strong> input, settings, engine version, output e approvazione devono essere archiviati.</li>
+            <li><strong>SLA API:</strong> timeout, retry, rate limit, costi e determinismo sono requisiti di prodotto.</li>
+            <li><strong>Portabilita:</strong> evitare che l'unico master resti irrecuperabile nel tenant del provider.</li>
+          </ul>
+          <div class="callout info">
+            <strong>Segnale di mercato:</strong> anche operatori POD come Printful trattano la digitalizzazione
+            come specifica per design, prodotto, dimensione e tecnica. Printful non accetta stitch file esterni
+            nel proprio flusso, proprio per controllare densita, colori e compatibilita macchina. Per Zakeke questo
+            significa che il contratto di integrazione deve includere il contesto produttivo, non solo l'artwork.
+          </div>
+        </div>
+      </section>
+
+      <section id="providers">
+        <div class="section-inner">
+          <h2>Differenze tra i quattro provider</h2>
+          <p class="lead">
+            La tabella distingue quanto documentato dal vendor da quanto oggi esposto nel Lab. La lista del
+            software desktop non prova automaticamente che lo stesso formato sia disponibile via API.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Provider</th><th>Preview</th><th>Output API / Lab</th><th>Master piu ricco</th><th>Vantaggio</th><th>Rischio aperto</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Wilcom EWA</strong><br><span class="status good">Integrato</span></td>
+                  <td>TrueView PNG.</td>
+                  <td><span class="tag">EMB</span><span class="tag">DST</span><span class="tag">PES</span><span class="tag">EXP</span><span class="tag">JEF</span><br>La documentazione EWA elenca anche molti altri formati.</td>
+                  <td><code>EMB</code></td>
+                  <td>Matrice formati ufficiale molto ampia e master object-based.</td>
+                  <td>Limiti di complessita dell'auto-digitizing; versioni EMB e costi/piano da contrattualizzare.</td>
+                </tr>
+                <tr>
+                  <td><strong>PulseID</strong><br><span class="status good">Integrato</span></td>
+                  <td>PNG/JPG; vectors JSON e metadata disponibili.</td>
+                  <td><span class="tag">PXF</span><span class="tag">DST</span><span class="tag">TCF</span><span class="tag">PES</span><span class="tag">Z00</span><span class="tag">PCF</span></td>
+                  <td><code>PXF</code></td>
+                  <td>API Generate chiara, formati multipli e controlli di machine format/recipe.</td>
+                  <td>Verificare licenza commerciale, SLA e round-trip dei file nativi.</td>
+                </tr>
+                <tr>
+                  <td><strong>Melco Cloud</strong><br><span class="status good">Integrato image</span></td>
+                  <td>Preview binaria piu metadata.</td>
+                  <td><span class="tag">OFM</span><span class="tag">EXP</span><span class="tag">DST</span> nel Lab.</td>
+                  <td><code>OFM</code></td>
+                  <td>OFM conserva wireframe, colori e impostazioni per produzione Melco.</td>
+                  <td>Swagger AutoDigitize documenta download ma non enumera chiaramente i formati; text standalone non ancora confermato.</td>
+                </tr>
+                <tr>
+                  <td><strong>ZSK Web API / ACE</strong><br><span class="status warn">Text pronto; image richiede ACE</span></td>
+                  <td><code>CreatePNG</code> TrueView.</td>
+                  <td><span class="tag">TC / Z00</span><span class="tag">TBF</span><span class="tag">DST</span><span class="tag">DSZ</span></td>
+                  <td><code>Z00 / TC</code></td>
+                  <td>Output ZSK nativo e file di terze parti nello stesso StitchJob API; needle/color info.</td>
+                  <td>Per bitmap-to-stitch va confermata e attivata la licenza/token ACE nel tenant.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Capability matrix iniziale</h3>
+          <div class="table-wrap">
+            <table class="scorecard">
+              <thead><tr><th>Capacita</th><th>Wilcom</th><th>PulseID</th><th>Melco</th><th>ZSK</th></tr></thead>
+              <tbody>
+                <tr><td>PNG realistic preview</td><td class="score yes">Si</td><td class="score yes">Si</td><td class="score yes">Si</td><td class="score yes">Si</td></tr>
+                <tr><td>DST via API</td><td class="score yes">Si</td><td class="score yes">Si</td><td class="score yes">Lab</td><td class="score yes">Si</td></tr>
+                <tr><td>Provider-native rich output</td><td class="score yes">EMB</td><td class="score yes">PXF</td><td class="score yes">OFM</td><td class="score yes">Z00</td></tr>
+                <tr><td>Broad machine-format choice</td><td class="score yes">Alta</td><td class="score yes">Alta</td><td class="score partial">Media</td><td class="score yes">Alta</td></tr>
+                <tr><td>Documentazione output esplicita</td><td class="score yes">Alta</td><td class="score yes">Alta</td><td class="score partial">Parziale</td><td class="score yes">Alta</td></tr>
+                <tr><td>Image digitization oggi testabile nel Lab</td><td class="score yes">Si</td><td class="score yes">Si</td><td class="score yes">Si</td><td class="score no">No, manca ACE token</td></tr>
+                <tr><td>Text production oggi testabile nel Lab</td><td class="score yes">Si</td><td class="score yes">Si</td><td class="score no">No</td><td class="score yes">Si</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout">
+            <strong>Nota Melco:</strong> DesignShop supporta una gamma piu ampia di formati, ma il report
+            considera separatamente il prodotto desktop e l'endpoint Cloud AutoDigitize. Prima della scelta
+            va ottenuta da Melco una lista contrattuale degli output API, incluse versioni e sidecar generati.
+          </div>
+        </div>
+      </section>
+
+      <section id="evaluation">
+        <div class="section-inner">
+          <h2>Come valutare i file</h2>
+          <p class="lead">
+            Ogni provider deve ricevere lo stesso corpus e produrre sia preview sia file macchina. La verifica
+            va eseguita in quattro livelli, dal controllo automatico al ricamo fisico.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Livello</th><th>Controlli</th><th>Esito misurabile</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>1. Integrita</strong></td>
+                  <td>Estensione e signature reali; file non vuoto; parser indipendente; assenza di risposta JSON/HTML rinominata.</td>
+                  <td>100% dei file apribili e coerenti col MIME/formato dichiarato.</td>
+                </tr>
+                <tr>
+                  <td><strong>2. Metadata</strong></td>
+                  <td>Width/height mm, stitch count, colori, color changes, trims, jumps, stops, bounds e needle order.</td>
+                  <td>Differenze spiegabili tra metadata API, parser indipendente e software macchina.</td>
+                </tr>
+                <tr>
+                  <td><strong>3. Simulazione</strong></td>
+                  <td>Aprire lo stesso output in almeno due viewer indipendenti; verificare sequenza, sovrapposizioni e palette.</td>
+                  <td>Nessun taglio, offset o cambio colore inatteso; preview coerente col file.</td>
+                </tr>
+                <tr>
+                  <td><strong>4. Sew-out</strong></td>
+                  <td>Ricamo su tessuti target, misurando rotture, puckering, registrazione, copertura, leggibilita e tempo.</td>
+                  <td>Pass/fail del ricamificio e score fotografico standardizzato.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Corpus minimo di prova</h3>
+          <ol>
+            <li>Logo piatto da 2-4 colori, sfondo trasparente.</li>
+            <li>Logo con piccoli dettagli e aree sottili.</li>
+            <li>Gradienti e antialiasing per testare la riduzione colori.</li>
+            <li>Testo piccolo, medio e multilinea con caratteri accentati.</li>
+            <li>Design monocolore e design con 8-12 colori.</li>
+            <li>Versioni per capo piano, maglia elastica e cappellino.</li>
+          </ol>
+
+          <h3>KPI da salvare nello storico</h3>
+          <ul class="checklist">
+            <li>Provider, endpoint, engine/API version e request ID.</li>
+            <li>Hash dell'input originale e dell'input preprocessato.</li>
+            <li>Tutti i settings e le dimensioni fisiche richieste.</li>
+            <li>Latenza, retry, status HTTP e costo stimato.</li>
+            <li>Formato, byte size e hash di ogni output.</li>
+            <li>Stitches, trims, jumps, colors e color changes.</li>
+            <li>Palette RGB, thread chart e needle assignment.</li>
+            <li>Esito parser, viewer, import macchina e sew-out.</li>
+          </ul>
+
+          <div class="callout risk">
+            <strong>Regola di comparazione:</strong> non confrontare stitch count o qualita se dimensioni fisiche,
+            tessuto/recipe, numero colori e strategia di background sono diversi. Il confronto deve dichiarare
+            quali parametri sono uguali e quali sono specifici del provider.
+          </div>
+        </div>
+      </section>
+
+      <section id="recommendation">
+        <div class="section-inner">
+          <h2>Architettura consigliata per Zakeke</h2>
+          <p class="lead">
+            Normalizzare il contratto verso Zakeke senza cancellare le capacita specifiche dei provider.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Output logico</th><th>Contenuto</th><th>Fallback</th></tr></thead>
+              <tbody>
+                <tr><td><code>preview</code></td><td>PNG trasparente, DPI, bounds, width/height mm.</td><td>Render locale dal machine file, marcato come non vendor TrueView.</td></tr>
+                <tr><td><code>master</code></td><td>EMB, PXF, OFM o Z00/TC con versione dichiarata.</td><td>Machine file piu request completa se il master non e cedibile.</td></tr>
+                <tr><td><code>production[]</code></td><td>DST obbligatorio piu formati richiesti dalla flotta.</td><td>DST con sidecar colori/aghi.</td></tr>
+                <tr><td><code>metadata</code></td><td>Schema JSON Zakeke: metriche, palette, needles, limiti e warning.</td><td>Parser indipendente del file prodotto.</td></tr>
+                <tr><td><code>provenance</code></td><td>Provider, versione, request hash, settings, timestamp e correlation ID.</td><td>Nessuno: requisito obbligatorio.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Gate prima della scelta del partner</h3>
+          <ol>
+            <li>Il provider genera realmente preview + master/native + DST tramite API, non solo dal software desktop.</li>
+            <li>La licenza consente a Zakeke di archiviare e consegnare gli output al fulfillment partner.</li>
+            <li>Il file supera parser, viewer e import su almeno due famiglie di macchine target.</li>
+            <li>Il provider espone o consente di ricostruire colori, needles e stitch count.</li>
+            <li>Timeout, concorrenza, rate limit, retention, regione dati e SLA sono contrattualizzati.</li>
+            <li>Il corpus di sew-out raggiunge la soglia concordata senza correzioni manuali sistematiche.</li>
+          </ol>
+
+          <div class="verdict">
+            <div class="verdict-label">Priorita test</div>
+            <div class="verdict-body">
+              <strong>1. DST baseline su tutti;</strong> 2. master nativo; 3. palette/needle fidelity;
+              4. sew-out; 5. costi e SLA. Per il confronto iniziale Wilcom e Pulse hanno la documentazione
+              output piu esplicita; ZSK e molto forte per una flotta ZSK ma l'image flow dipende da ACE;
+              Melco e interessante per OFM, con una lacuna documentale API da chiudere formalmente.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="open-questions">
+        <div class="section-inner">
+          <h2>Domande da inviare ai provider</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Provider</th><th>Domande prioritarie</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Wilcom</strong></td><td>Quali formati/versioni sono inclusi nel piano EWA? EMB e cedibile al fulfillment? Quali sidecar vengono restituiti? Limiti/rate per output multipli?</td></tr>
+                <tr><td><strong>PulseID</strong></td><td>PXF puo essere archiviato e riutilizzato fuori dal tenant? Quali differenze concrete tra machine format e file format? SLA e licensing per SaaS multi-tenant?</td></tr>
+                <tr><td><strong>Melco</strong></td><td>Lista ufficiale output di <code>/digitize/download</code>, versioni OFM, sidecar EXP, limiti input, text lettering backend, rate/concurrency e produzione vs sandbox.</td></tr>
+                <tr><td><strong>ZSK</strong></td><td>Attivazione e pricing ACE per image-to-stitch, portabilita Z00/TC, differenze CreateTBF/DST/DSZ, limiti richiesta e SLA del renderer.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="sources">
+        <div class="section-inner">
+          <h2>Fonti principali</h2>
+          <p class="lead">Fonti ufficiali consultate; disponibilita e contenuti verificati alla data del report.</p>
+          <ol class="sources">
+            <li><a href="https://apiguide.wilcom.com/documents/api-interface-specification/overview/">Wilcom EWA - Interface overview</a></li>
+            <li><a href="https://apiguide.wilcom.com/documents/api-interface-specification/supported-formats/embroidery-formats/">Wilcom EWA - Embroidery formats</a></li>
+            <li><a href="https://apiguide.wilcom.com/documents/api-interface-specification/api-xml-data-package-definitions/design-recipe-recipe-xml-data/output/">Wilcom EWA - Output recipe</a></li>
+            <li><a href="https://apiguide.wilcom.com/documents/api-interface-specification/limitations/">Wilcom EWA - Auto digitize limits</a></li>
+            <li><a href="https://webapi.pulseidconnect.com/Documentation/Generate">PulseID Toolkit - Generate production file</a></li>
+            <li><a href="https://webapi.pulseidconnect.com/Documentation/Render">PulseID Toolkit - Render preview</a></li>
+            <li><a href="https://webapi.pulseidconnect.com/Documentation/Vectors">PulseID Toolkit - Vectors and palette JSON</a></li>
+            <li><a href="https://webapi.pulseidconnect.com/Documentation/Autodigitize">PulseID Toolkit - Autodigitize</a></li>
+            <li><a href="https://apis.melcocloud.com/docs/index.html">Melco Cloud - Swagger portal</a></li>
+            <li><a href="https://melco.com/designshop-12/">Melco DesignShop 12 - File support and OFM</a></li>
+            <li><a href="https://melco.com/en-gb/comparison-of-embroidery-machines/">Melco - Machine file format support</a></li>
+            <li><a href="https://www.embroidery-api.com/api/ZSKWebApi">ZSK Web API - StitchJob documentation</a></li>
+            <li><a href="https://www.zsk.de/de/software/webapi.php">ZSK Web API - Output formats and capabilities</a></li>
+            <li><a href="https://www.zsk.de/en/industries-and-applications/online-shop-%20process-solutions/zsk-code.php">ZSK - ZSK code vs DST</a></li>
+            <li><a href="https://help.brother-usa.com/app/answers/detail/a_id/129477/~/format-types">Brother - Machine format types</a></li>
+            <li><a href="https://support.printful.com/hc/en-us/articles/41396531555729-What-is-digitization">Printful - What is digitization</a></li>
+          </ol>
+
+          <div class="callout info">
+            <strong>Metodo:</strong> il documento combina documentazione ufficiale, comportamento implementato
+            in EmbroideryLab e osservazioni delle prove. Le affermazioni non documentate dal vendor sono indicate
+            come punti da confermare; non sono trattate come garanzie commerciali.
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      EmbroideryLab - Internal provider assessment. Documento standalone, privo di API key, token e dati personali.
+    </footer>
+  </body>
+</html>

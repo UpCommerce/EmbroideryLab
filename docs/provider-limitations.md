@@ -15,7 +15,7 @@ Stato dei dati:
 
 | Provider | Input documentato | Limiti dimensione/risoluzione | Limiti colori/complessita | Output documentato/usato | Note principali |
 | --- | --- | --- | --- | --- | --- |
-| Wilcom EWA | Bitmap: JPG/JPEG, BMP, PNG, GIF, PSD, TIF. Vector: EPS, PDF. | Request < 20 MB, artwork auto-digitize max 2 MB, max 5,000,000 px, max 22,500 mm2, max processing 90 s. Per vector il pixel count e calcolato a 300 DPI. | Nessun numero massimo colori pubblico. EWA dichiara una fase interna di color reduction. In Lab abbiamo visto errore 151 su artwork troppo complessi. | TrueView PNG, design file in formati embroidery Wilcom supportati, tra cui EMB, DST, EXP, PES, JEF e altri. | Il provider piu esplicito sui limiti hard, ma serve capire meglio la soglia di complessita/colori. |
+| Wilcom EWA | Bitmap: JPG/JPEG, BMP, PNG, GIF, PSD, TIF. Vector: EPS, PDF. | Request < 20 MB, artwork auto-digitize max 2 MB, max 5,000,000 px, max 22,500 mm2, max processing 90 s. Support note: circa 300 DPI, area suggerita min 100 mm2. Per vector il pixel count e calcolato a 300 DPI. | Nessun massimo colori API pubblico. La support note raccomanda 5-6 colori per un logo efficiente, ma non e un hard limit. EWA dichiara color reduction interna; nel Lab abbiamo visto errore 151 su artwork complessi. | TrueView PNG, design file in formati embroidery Wilcom supportati, tra cui EMB, DST, EXP, PES, JEF e altri. | Il provider piu esplicito sui limiti hard, ma serve capire meglio la soglia di complessita/colori. |
 | PulseID | Bitmap: BMP, JPG, PNG, TIF, PCX, MAC, PCD, TGA. Vector: CDR, CMX, EMF, WMF, EPS, AI. | Non trovato un limite pubblico su MB, pixel o area. Timeout autodigitize default 60 s. | `NumColors` controlla la palette: se inferiore ai colori originali prova a ridurre; se superiore ai colori originali puo generare eccezione. | Preview PNG/JPG/JPEG; production PXF, DST, TCF, PES, Z00, PCF. | Molte leve API, registrazione/test piu semplice, ma mancano limiti hard pubblici. |
 | Melco Cloud | API `design-editor/digitize/*` usa `multipart/form-data` con campo `image_file`. Formati input non esplicitati nella spec pubblica consultata. | Non trovato un limite pubblico su MB, pixel, area o timeout. La spec espone `new_width` e `new_height` come query integer. | Non trovati parametri pubblici per riduzione colori o complessita sull'endpoint AutoDigitize. | Nel Lab: preview binaria e download OFM, DST, EXP. | L'API funziona, ma per una scelta partner servono limiti formali, SLA e policy dati. |
 | ZSK ACE | PNG, JPG, BMP via `PictureType` + `PictureBase64`. | Non trovato un limite pubblico su MB, pixel, area o timeout. | `MaxColors` default 24; `Tolerance` 0-300; `RemoveArea` 0-200. ACE ha parametri espliciti per raggruppare colori e rimuovere aree piccole. | ACE documenta `CreatePNG` e `CreateTC`; il Lab usa TC/Z00 e conversione successiva a DST quando richiesta. | Tecnologicamente molto adatto allo scopo, ma serve tenant/API key con licenza ACE e limiti operativi. |
@@ -47,6 +47,16 @@ Limiti hard auto-digitize:
 - Per file vector, il pixel count viene calcolato a `300 DPI`.
 - Area max: `22,500 mm2`.
 - Processing max: `90 s`.
+
+Indicazioni aggiuntive dalla support note Wilcom del 3 febbraio 2022, presentate come linee guida di preflight:
+
+- Area minima suggerita: `100 mm2`.
+- Risoluzione raccomandata: circa `300 DPI` alla dimensione fisica richiesta.
+- Una linea richiede circa `3 px` di larghezza per essere riconosciuta dall'AI; non e una soglia di cucibilita.
+- Input ideale: loghi/emblemi con contorni definiti e colori piatti, senza gradienti.
+- `5-6` colori e un target tipico per un logo produttivamente efficiente, non un massimo API.
+- Gli oggetti molto piccoli possono essere rimossi come rumore.
+- Le fotografie non dovrebbero essere inviate al workflow EWA descritto.
 
 Dimensione fisica:
 

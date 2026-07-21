@@ -1,0 +1,2103 @@
+﻿<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wilcom successful executions</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f3ee;
+      --panel: #ffffff;
+      --ink: #24211d;
+      --muted: #6f6960;
+      --line: #d8d1c7;
+      --accent: #0d6f8f;
+      --code: #171717;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 14px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 18px 28px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(245, 243, 238, 0.94);
+      backdrop-filter: blur(10px);
+    }
+    h1 { margin: 0; font-size: 22px; letter-spacing: 0; }
+    header p { margin: 4px 0 0; color: var(--muted); }
+    main {
+      display: grid;
+      gap: 18px;
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 22px;
+    }
+    article {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    .entry-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .entry-head strong { font-size: 15px; }
+    .entry-head span { color: var(--muted); }
+    .visuals {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+      padding: 16px;
+    }
+    .comment-box {
+      margin: 14px 16px 0;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fbfc;
+    }
+    .comment-box strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--accent);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .comment-box p {
+      margin: 0;
+      color: var(--ink);
+    }
+    figure { margin: 0; }
+    figcaption {
+      margin-bottom: 8px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+    }
+    .image-frame {
+      display: grid;
+      min-height: 260px;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(45deg, #f3f3f3 25%, transparent 25%),
+        linear-gradient(-45deg, #f3f3f3 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #f3f3f3 75%),
+        linear-gradient(-45deg, transparent 75%, #f3f3f3 75%);
+      background-color: #fff;
+      background-size: 22px 22px;
+      background-position: 0 0, 0 11px, 11px -11px, -11px 0;
+    }
+    img {
+      display: block;
+      width: 100%;
+      max-height: 420px;
+      object-fit: contain;
+      cursor: zoom-in;
+    }
+    .empty {
+      color: var(--muted);
+      padding: 24px;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 0 16px 16px;
+    }
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 9px;
+      color: var(--muted);
+      background: #faf9f6;
+      font-size: 12px;
+    }
+    .xml-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+      padding: 0 16px 16px;
+    }
+    details {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfaf7;
+    }
+    .xml-link {
+      display: inline-flex;
+      margin: 0 12px 10px;
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .xml-link:hover { text-decoration: underline; }
+    summary {
+      cursor: pointer;
+      padding: 10px 12px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    pre {
+      max-height: 430px;
+      overflow: auto;
+      margin: 0;
+      padding: 12px;
+      border-top: 1px solid var(--line);
+      background: var(--code);
+      color: #f3f3f3;
+      font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      background: rgba(0, 0, 0, 0.78);
+      z-index: 10;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img {
+      width: auto;
+      max-width: 96vw;
+      max-height: 92vh;
+      background: #fff;
+      border-radius: 8px;
+      cursor: zoom-out;
+    }
+    @media (max-width: 900px) {
+      .visuals, .xml-grid { grid-template-columns: 1fr; }
+      header { padding: 14px 18px; }
+      main { padding: 14px; }
+    }
+      @media print {
+      @page { size: A4; margin: 10mm; }
+      body { background: #fff; font-size: 10px; }
+      header { position: static; padding: 0 0 8px; background: #fff; border-bottom: 1px solid var(--line); }
+      h1 { font-size: 18px; }
+      main { max-width: none; padding: 8px 0 0; gap: 8px; }
+      article { break-inside: avoid; page-break-inside: avoid; border-radius: 6px; }
+      .entry-head { padding: 7px 9px; }
+      .entry-head strong { font-size: 12px; }
+      .comment-box { margin: 8px 10px 0; padding: 7px 8px; }
+      .comment-box strong { font-size: 9px; margin-bottom: 2px; }
+      .comment-box p { font-size: 9px; line-height: 1.25; }
+      .visuals { grid-template-columns: 1fr 1fr; gap: 8px; padding: 9px 10px; break-inside: avoid; page-break-inside: avoid; }
+      figure { break-inside: avoid; page-break-inside: avoid; }
+      figcaption { margin-bottom: 4px; font-size: 8px; }
+      .image-frame { min-height: 120px; max-height: 190px; padding: 4px; overflow: hidden; break-inside: avoid; page-break-inside: avoid; }
+      img { max-height: 180px; }
+      .xml-grid { grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 10px 10px; }
+      details { break-inside: avoid; page-break-inside: avoid; }
+      summary { padding: 6px 8px; font-size: 9px; }
+      .xml-link { margin: 0 8px 6px; font-size: 8px; }
+      pre { max-height: 90px; padding: 7px; font-size: 7px; line-height: 1.25; }
+      .lightbox { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Wilcom successful executions</h1>
+  </header>
+  <main>
+    <article id="W-001">
+    <div class="entry-head">
+      <strong>W-001</strong>
+    </div>
+    <div class="comment-box"><strong>Comment</strong><p>With background removal enabled, Wilcom probably misread the green as the background and removed it. Test to run: preprocess the image by removing the background before sending it to Wilcom, or set removeBackground to false and compare the results.</p></div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-001-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-001-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-001-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;flag-italy.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;
+    &lt;threads&gt;
+      &lt;thread color=&quot;4624896&quot; code=&quot;1&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#009246&quot; /&gt;
+      &lt;thread color=&quot;3615694&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#CE2B37&quot; /&gt;
+      &lt;thread color=&quot;16777215&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+    &lt;/threads&gt;
+  &lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;flag-italy.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-001-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;2843&quot; num_colours=&quot;2&quot; num_trims=&quot;2&quot; num_objects=&quot;2&quot; num_colour_changes=&quot;1&quot; height=&quot;45.3777777777778&quot; width=&quot;45.0166666666667&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;4624896&quot; code=&quot;1&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#009246&quot; /&gt;
+          &lt;thread color=&quot;16777215&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+          &lt;thread color=&quot;3615694&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#CE2B37&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;1&quot; num_stitches=&quot;1433&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;1408&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-002">
+    <div class="entry-head">
+      <strong>W-002</strong>
+    </div>
+    <div class="comment-box"><strong>Comment</strong><p>Good result.</p></div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-002-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-002-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-002-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;pre_2___.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;&lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;pre_2___.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-002-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;1453&quot; num_colours=&quot;2&quot; num_trims=&quot;2&quot; num_objects=&quot;2&quot; num_colour_changes=&quot;1&quot; height=&quot;45.4555555555556&quot; width=&quot;45.5722222222222&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;1508584&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R232 G4 B23&quot; /&gt;
+          &lt;thread color=&quot;59888&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R240 G233 B0&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;632&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;1&quot; num_stitches=&quot;819&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-003">
+    <div class="entry-head">
+      <strong>W-003</strong>
+    </div>
+    <div class="comment-box"><strong>Comment</strong><p>Needs evaluation to see whether it can be improved; try preprocessing.</p></div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-003-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-003-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-003-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;14_1.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;
+    &lt;threads&gt;
+      &lt;thread color=&quot;328707&quot; code=&quot;1&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#030405&quot; /&gt;
+      &lt;thread color=&quot;9057764&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#E4358A&quot; /&gt;
+      &lt;thread color=&quot;16579836&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FCFCFC&quot; /&gt;
+      &lt;thread color=&quot;10066072&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#989899&quot; /&gt;
+      &lt;thread color=&quot;13092552&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#C8C6C7&quot; /&gt;
+      &lt;thread color=&quot;11237355&quot; code=&quot;6&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#EB77AB&quot; /&gt;
+      &lt;thread color=&quot;13215729&quot; code=&quot;7&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#F1A7C9&quot; /&gt;
+      &lt;thread color=&quot;7960696&quot; code=&quot;8&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#787879&quot; /&gt;
+    &lt;/threads&gt;
+  &lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;14_1.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-003-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;7146&quot; num_colours=&quot;7&quot; num_trims=&quot;15&quot; num_objects=&quot;122&quot; num_colour_changes=&quot;14&quot; height=&quot;45.2166666666667&quot; width=&quot;53.6333333333333&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;16579836&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FCFCFC&quot; /&gt;
+          &lt;thread color=&quot;13092552&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#C8C6C7&quot; /&gt;
+          &lt;thread color=&quot;13092552&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#C8C6C7&quot; /&gt;
+          &lt;thread color=&quot;10066072&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#989899&quot; /&gt;
+          &lt;thread color=&quot;328707&quot; code=&quot;1&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#030405&quot; /&gt;
+          &lt;thread color=&quot;9057764&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#E4358A&quot; /&gt;
+          &lt;thread color=&quot;9057764&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#E4358A&quot; /&gt;
+          &lt;thread color=&quot;11237355&quot; code=&quot;6&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#EB77AB&quot; /&gt;
+          &lt;thread color=&quot;11237355&quot; code=&quot;6&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#EB77AB&quot; /&gt;
+          &lt;thread color=&quot;11237355&quot; code=&quot;6&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#EB77AB&quot; /&gt;
+          &lt;thread color=&quot;11237355&quot; code=&quot;6&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#EB77AB&quot; /&gt;
+          &lt;thread color=&quot;11237355&quot; code=&quot;6&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#EB77AB&quot; /&gt;
+          &lt;thread color=&quot;13215729&quot; code=&quot;7&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#F1A7C9&quot; /&gt;
+          &lt;thread color=&quot;11237355&quot; code=&quot;6&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#EB77AB&quot; /&gt;
+          &lt;thread color=&quot;13215729&quot; code=&quot;7&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#F1A7C9&quot; /&gt;
+          &lt;thread color=&quot;13215729&quot; code=&quot;7&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#F1A7C9&quot; /&gt;
+          &lt;thread color=&quot;13215729&quot; code=&quot;7&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#F1A7C9&quot; /&gt;
+          &lt;thread color=&quot;13215729&quot; code=&quot;7&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#F1A7C9&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;1543&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;1&quot; num_stitches=&quot;635&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;12&quot; num_stitches=&quot;225&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;7&quot; num_stitches=&quot;626&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;5&quot; num_stitches=&quot;559&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;3&quot; num_stitches=&quot;189&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;12&quot; num_stitches=&quot;262&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;7&quot; num_stitches=&quot;228&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;5&quot; num_stitches=&quot;309&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;7&quot; num_stitches=&quot;471&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;4&quot; num_stitches=&quot;1854&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;5&quot; num_stitches=&quot;6&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;7&quot; num_stitches=&quot;7&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;39&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;4&quot; num_stitches=&quot;191&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-004">
+    <div class="entry-head">
+      <strong>W-004</strong>
+    </div>
+    <div class="comment-box"><strong>Comment</strong><p>Very poor result, but the image resolution after background removal may be low. Try preprocessing before sending it to Wilcom.</p></div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-004-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-004-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-004-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;zakeke_wallpaper.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;&lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;zakeke_wallpaper.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-004-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;396&quot; num_colours=&quot;4&quot; num_trims=&quot;3&quot; num_objects=&quot;12&quot; num_colour_changes=&quot;3&quot; height=&quot;5.01111111111111&quot; width=&quot;26.0444444444444&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;5656115&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R51 G78 B86&quot; /&gt;
+          &lt;thread color=&quot;16645629&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R253 G253 B253&quot; /&gt;
+          &lt;thread color=&quot;9109997&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R237 G1 B139&quot; /&gt;
+          &lt;thread color=&quot;3919783&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R167 G207 B59&quot; /&gt;
+          &lt;thread color=&quot;1999349&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R245 G129 B30&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;1&quot; num_stitches=&quot;366&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;4&quot; num_stitches=&quot;10&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;11&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;3&quot; num_stitches=&quot;7&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-005">
+    <div class="entry-head">
+      <strong>W-005</strong>
+    </div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-005-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-005-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-005-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;out.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;&lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;out.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-005-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;15827&quot; num_colours=&quot;72&quot; num_trims=&quot;170&quot; num_objects=&quot;624&quot; num_colour_changes=&quot;162&quot; height=&quot;44.8666666666667&quot; width=&quot;46.4388888888889&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;1180163&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R3 G2 B18&quot; /&gt;
+          &lt;thread color=&quot;3343360&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R0 G4 B51&quot; /&gt;
+          &lt;thread color=&quot;4527369&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R9 G21 B69&quot; /&gt;
+          &lt;thread color=&quot;5184518&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R6 G28 B79&quot; /&gt;
+          &lt;thread color=&quot;6170631&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R7 G40 B94&quot; /&gt;
+          &lt;thread color=&quot;7087131&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R27 G36 B108&quot; /&gt;
+          &lt;thread color=&quot;8071203&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R35 G40 B123&quot; /&gt;
+          &lt;thread color=&quot;7881496&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R24 G67 B120&quot; /&gt;
+          &lt;thread color=&quot;9591853&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R45 G92 B146&quot; /&gt;
+          &lt;thread color=&quot;11435850&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R74 G127 B174&quot; /&gt;
+          &lt;thread color=&quot;12156705&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R33 G127 B185&quot; /&gt;
+          &lt;thread color=&quot;12029775&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R79 G143 B183&quot; /&gt;
+          &lt;thread color=&quot;12689499&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R91 G160 B193&quot; /&gt;
+          &lt;thread color=&quot;10637594&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R26 G81 B162&quot; /&gt;
+          &lt;thread color=&quot;13415784&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R104 G181 B204&quot; /&gt;
+          &lt;thread color=&quot;10315319&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R55 G102 B157&quot; /&gt;
+          &lt;thread color=&quot;14666127&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R143 G201 B223&quot; /&gt;
+          &lt;thread color=&quot;13216867&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R99 G172 B201&quot; /&gt;
+          &lt;thread color=&quot;11244123&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R91 G146 B171&quot; /&gt;
+          &lt;thread color=&quot;9664842&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R74 G121 B147&quot; /&gt;
+          &lt;thread color=&quot;8489085&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R125 G136 B129&quot; /&gt;
+          &lt;thread color=&quot;7560768&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R64 G94 B115&quot; /&gt;
+          &lt;thread color=&quot;6703638&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R22 G74 B102&quot; /&gt;
+          &lt;thread color=&quot;6829069&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R13 G52 B104&quot; /&gt;
+          &lt;thread color=&quot;8693433&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R185 G166 B132&quot; /&gt;
+          &lt;thread color=&quot;6529989&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R197 G163 B99&quot; /&gt;
+          &lt;thread color=&quot;6257032&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R136 G121 B95&quot; /&gt;
+          &lt;thread color=&quot;8089950&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R94 G113 B123&quot; /&gt;
+          &lt;thread color=&quot;5789795&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R99 G88 B88&quot; /&gt;
+          &lt;thread color=&quot;5130055&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R71 G71 B78&quot; /&gt;
+          &lt;thread color=&quot;5193508&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R36 G63 B79&quot; /&gt;
+          &lt;thread color=&quot;4958445&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R237 G168 B75&quot; /&gt;
+          &lt;thread color=&quot;4159652&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R164 G120 B63&quot; /&gt;
+          &lt;thread color=&quot;1528968&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R136 G84 B23&quot; /&gt;
+          &lt;thread color=&quot;4282745&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R121 G89 B65&quot; /&gt;
+          &lt;thread color=&quot;3748395&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R43 G50 B57&quot; /&gt;
+          &lt;thread color=&quot;2470898&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R242 G179 B37&quot; /&gt;
+          &lt;thread color=&quot;2409978&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R250 G197 B36&quot; /&gt;
+          &lt;thread color=&quot;1929950&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R222 G114 B29&quot; /&gt;
+          &lt;thread color=&quot;1993132&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R172 G105 B30&quot; /&gt;
+          &lt;thread color=&quot;6282236&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R252 G219 B95&quot; /&gt;
+          &lt;thread color=&quot;9042429&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R253 G249 B137&quot; /&gt;
+          &lt;thread color=&quot;7524081&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R241 G206 B114&quot; /&gt;
+          &lt;thread color=&quot;1326694&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R102 G62 B20&quot; /&gt;
+          &lt;thread color=&quot;5501948&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R252 G243 B83&quot; /&gt;
+          &lt;thread color=&quot;1293300&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R244 G187 B19&quot; /&gt;
+          &lt;thread color=&quot;1486582&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R246 G174 B22&quot; /&gt;
+          &lt;thread color=&quot;238323&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R243 G162 B3&quot; /&gt;
+          &lt;thread color=&quot;2453440&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R192 G111 B37&quot; /&gt;
+          &lt;thread color=&quot;7741&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R61 G30 B0&quot; /&gt;
+          &lt;thread color=&quot;59898&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R250 G233 B0&quot; /&gt;
+          &lt;thread color=&quot;55033&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R249 G214 B0&quot; /&gt;
+          &lt;thread color=&quot;798565&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R101 G47 B12&quot; /&gt;
+          &lt;thread color=&quot;2686205&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R253 G252 B40&quot; /&gt;
+          &lt;thread color=&quot;4403293&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R93 G48 B67&quot; /&gt;
+          &lt;thread color=&quot;301810&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R242 G154 B4&quot; /&gt;
+          &lt;thread color=&quot;1790369&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R161 G81 B27&quot; /&gt;
+          &lt;thread color=&quot;8762853&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R229 G181 B133&quot; /&gt;
+          &lt;thread color=&quot;6201578&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R234 G160 B94&quot; /&gt;
+          &lt;thread color=&quot;3296142&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R142 G75 B50&quot; /&gt;
+          &lt;thread color=&quot;2253742&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R174 G99 B34&quot; /&gt;
+          &lt;thread color=&quot;874961&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R209 G89 B13&quot; /&gt;
+          &lt;thread color=&quot;21725&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R221 G84 B0&quot; /&gt;
+          &lt;thread color=&quot;8238839&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R247 G182 B125&quot; /&gt;
+          &lt;thread color=&quot;68930&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R66 G13 B1&quot; /&gt;
+          &lt;thread color=&quot;333171&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R115 G21 B5&quot; /&gt;
+          &lt;thread color=&quot;605640&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R200 G61 B9&quot; /&gt;
+          &lt;thread color=&quot;271009&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R161 G34 B4&quot; /&gt;
+          &lt;thread color=&quot;407235&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R195 G54 B6&quot; /&gt;
+          &lt;thread color=&quot;10604531&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R243 G207 B161&quot; /&gt;
+          &lt;thread color=&quot;12580350&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R254 G245 B191&quot; /&gt;
+          &lt;thread color=&quot;661433&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R185 G23 B10&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;24&quot; num_stitches=&quot;30&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;14&quot; num_stitches=&quot;27&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;89&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;38&quot; num_stitches=&quot;1477&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;51&quot; num_stitches=&quot;37&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;43&quot; num_stitches=&quot;109&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;49&quot; num_stitches=&quot;61&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;59&quot; num_stitches=&quot;24&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;5&quot; num_stitches=&quot;72&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;48&quot; num_stitches=&quot;286&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;67&quot; num_stitches=&quot;414&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;20&quot; num_stitches=&quot;26&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;31&quot; num_stitches=&quot;95&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;13&quot; num_stitches=&quot;8&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;15&quot; num_stitches=&quot;75&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;29&quot; num_stitches=&quot;8&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;66&quot; num_stitches=&quot;398&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;47&quot; num_stitches=&quot;98&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;54&quot; num_stitches=&quot;54&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;65&quot; num_stitches=&quot;153&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;35&quot; num_stitches=&quot;12&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;21&quot; num_stitches=&quot;105&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;10&quot; num_stitches=&quot;145&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;68&quot; num_stitches=&quot;108&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;43&quot; num_stitches=&quot;6&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;214&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;28&quot; num_stitches=&quot;12&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;9&quot; num_stitches=&quot;12&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;58&quot; num_stitches=&quot;132&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;30&quot; num_stitches=&quot;23&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;62&quot; num_stitches=&quot;128&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;55&quot; num_stitches=&quot;212&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;61&quot; num_stitches=&quot;9&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;35&quot; num_stitches=&quot;9&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;69&quot; num_stitches=&quot;37&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;44&quot; num_stitches=&quot;119&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;50&quot; num_stitches=&quot;62&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;37&quot; num_stitches=&quot;344&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;38&quot; num_stitches=&quot;229&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;70&quot; num_stitches=&quot;30&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;63&quot; num_stitches=&quot;99&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;31&quot; num_stitches=&quot;13&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;38&quot; num_stitches=&quot;21&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;32&quot; num_stitches=&quot;7&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;48&quot; num_stitches=&quot;7&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;66&quot; num_stitches=&quot;6&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;27&quot; num_stitches=&quot;25&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;49&quot; num_stitches=&quot;5&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;12&quot; num_stitches=&quot;200&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;55&quot; num_stitches=&quot;36&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;63&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;34&quot; num_stitches=&quot;8&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;41&quot; num_stitches=&quot;253&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;37&quot; num_stitches=&quot;8&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;55&quot; num_stitches=&quot;103&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;33&quot; num_stitches=&quot;84&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;30&quot; num_stitches=&quot;11&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;52&quot; num_stitches=&quot;8&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;32&quot; num_stitches=&quot;9&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;57&quot; num_stitches=&quot;51&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;17&quot; num_stitches=&quot;111&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;9&quot; num_stitches=&quot;107&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;21&quot; num_stitches=&quot;68&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;36&quot; num_stitches=&quot;96&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;46&quot; num_stitches=&quot;286&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;37&quot; num_stitches=&quot;73&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;47&quot; num_stitches=&quot;25&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;40&quot; num_stitches=&quot;115&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;47&quot; num_stitches=&quot;70&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;45&quot; num_stitches=&quot;8&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;31&quot; num_stitches=&quot;12&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;19&quot; num_stitches=&quot;268&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;25&quot; num_stitches=&quot;14&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;10&quot; num_stitches=&quot;8&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;24&quot; num_stitches=&quot;16&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;42&quot; num_stitches=&quot;26&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;6&quot; num_stitches=&quot;76&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;51&quot; num_stitches=&quot;188&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;38&quot; num_stitches=&quot;26&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;33&quot; num_stitches=&quot;7&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;15&quot; num_stitches=&quot;26&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;9&quot; num_stitches=&quot;92&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;21&quot; num_stitches=&quot;24&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;55&quot; num_stitches=&quot;9&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;36&quot; num_stitches=&quot;2&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;50&quot; num_stitches=&quot;39&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;14&quot; num_stitches=&quot;327&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;39&quot; num_stitches=&quot;69&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;11&quot; num_stitches=&quot;57&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;19&quot; num_stitches=&quot;8&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;57&quot; num_stitches=&quot;6&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;30&quot; num_stitches=&quot;152&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;10&quot; num_stitches=&quot;46&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;44&quot; num_stitches=&quot;82&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;41&quot; num_stitches=&quot;19&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;47&quot; num_stitches=&quot;9&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;12&quot; num_stitches=&quot;503&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;18&quot; num_stitches=&quot;31&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;12&quot; num_stitches=&quot;28&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;24&quot; num_stitches=&quot;15&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;16&quot; num_stitches=&quot;139&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;22&quot; num_stitches=&quot;22&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;26&quot; num_stitches=&quot;35&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;14&quot; num_stitches=&quot;49&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;50&quot; num_stitches=&quot;29&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;37&quot; num_stitches=&quot;62&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;31&quot; num_stitches=&quot;64&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;4&quot; num_stitches=&quot;421&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;64&quot; num_stitches=&quot;19&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;15&quot; num_stitches=&quot;45&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;17&quot; num_stitches=&quot;57&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;11&quot; num_stitches=&quot;73&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;9&quot; num_stitches=&quot;73&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;8&quot; num_stitches=&quot;70&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;51&quot; num_stitches=&quot;31&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;15&quot; num_stitches=&quot;36&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;6&quot; num_stitches=&quot;285&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;23&quot; num_stitches=&quot;122&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;26&quot; num_stitches=&quot;11&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;19&quot; num_stitches=&quot;6&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;9&quot; num_stitches=&quot;11&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;37&quot; num_stitches=&quot;11&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;31&quot; num_stitches=&quot;6&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;562&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;4&quot; num_stitches=&quot;140&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;20&quot; num_stitches=&quot;24&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;15&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;71&quot; num_stitches=&quot;457&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;171&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;53&quot; num_stitches=&quot;134&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;7&quot; num_stitches=&quot;672&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;48&quot; num_stitches=&quot;7&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;60&quot; num_stitches=&quot;13&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;13&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;1&quot; num_stitches=&quot;114&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;41&quot; num_stitches=&quot;40&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;55&quot; num_stitches=&quot;72&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;87&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;36&quot; num_stitches=&quot;12&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;51&quot; num_stitches=&quot;59&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;50&quot; num_stitches=&quot;91&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;68&quot; num_stitches=&quot;76&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;65&quot; num_stitches=&quot;120&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;66&quot; num_stitches=&quot;209&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;67&quot; num_stitches=&quot;27&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;70&quot; num_stitches=&quot;24&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;40&quot; num_stitches=&quot;6&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;46&quot; num_stitches=&quot;50&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;47&quot; num_stitches=&quot;15&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;37&quot; num_stitches=&quot;79&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;55&quot; num_stitches=&quot;9&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;53&quot; num_stitches=&quot;16&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;56&quot; num_stitches=&quot;68&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;65&quot; num_stitches=&quot;63&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;66&quot; num_stitches=&quot;56&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;52&quot; num_stitches=&quot;34&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;433&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;31&quot; num_stitches=&quot;5&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;51&quot; num_stitches=&quot;38&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;50&quot; num_stitches=&quot;21&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;44&quot; num_stitches=&quot;43&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;50&quot; num_stitches=&quot;5&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;3&quot; num_stitches=&quot;418&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-006">
+    <div class="entry-head">
+      <strong>W-006</strong>
+    </div>
+    <div class="comment-box"><strong>Comment</strong><p>The source image is too detailed, but try fine-tuning the API parameters to see whether it can be improved.</p></div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-006-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-006-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-006-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;LOGO carr_ 2.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;&lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;LOGO carr_ 2.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-006-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;23211&quot; num_colours=&quot;28&quot; num_trims=&quot;53&quot; num_objects=&quot;1108&quot; num_colour_changes=&quot;44&quot; height=&quot;42.9611111111111&quot; width=&quot;54.5333333333333&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;132099&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R3 G4 B2&quot; /&gt;
+          &lt;thread color=&quot;137315&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R99 G24 B2&quot; /&gt;
+          &lt;thread color=&quot;1810942&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R254 G161 B27&quot; /&gt;
+          &lt;thread color=&quot;1479933&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R253 G148 B22&quot; /&gt;
+          &lt;thread color=&quot;1607935&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R255 G136 B24&quot; /&gt;
+          &lt;thread color=&quot;2011902&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R254 G178 B30&quot; /&gt;
+          &lt;thread color=&quot;1609470&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R254 G142 B24&quot; /&gt;
+          &lt;thread color=&quot;1013500&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R252 G118 B15&quot; /&gt;
+          &lt;thread color=&quot;9887&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R159 G38 B0&quot; /&gt;
+          &lt;thread color=&quot;617469&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R253 G107 B9&quot; /&gt;
+          &lt;thread color=&quot;208818&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R178 G47 B3&quot; /&gt;
+          &lt;thread color=&quot;138886&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R134 G30 B2&quot; /&gt;
+          &lt;thread color=&quot;24573&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R253 G95 B0&quot; /&gt;
+          &lt;thread color=&quot;19701&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R245 G76 B0&quot; /&gt;
+          &lt;thread color=&quot;17376&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R224 G67 B0&quot; /&gt;
+          &lt;thread color=&quot;5723743&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R95 G86 B87&quot; /&gt;
+          &lt;thread color=&quot;7717119&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R255 G192 B117&quot; /&gt;
+          &lt;thread color=&quot;8357015&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R151 G132 B127&quot; /&gt;
+          &lt;thread color=&quot;14281981&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R253 G236 B217&quot; /&gt;
+          &lt;thread color=&quot;10605566&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R254 G211 B161&quot; /&gt;
+          &lt;thread color=&quot;16645629&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R253 G253 B253&quot; /&gt;
+          &lt;thread color=&quot;209861&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R197 G51 B3&quot; /&gt;
+          &lt;thread color=&quot;6778&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R122 G26 B0&quot; /&gt;
+          &lt;thread color=&quot;9013382&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R134 G136 B137&quot; /&gt;
+          &lt;thread color=&quot;11121614&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R206 G179 B169&quot; /&gt;
+          &lt;thread color=&quot;11705&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R185 G45 B0&quot; /&gt;
+          &lt;thread color=&quot;16599&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R215 G64 B0&quot; /&gt;
+          &lt;thread color=&quot;8910&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R206 G34 B0&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;20&quot; num_stitches=&quot;1428&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;26&quot; num_stitches=&quot;195&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;7&quot; num_stitches=&quot;880&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;23&quot; num_stitches=&quot;93&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;26&quot; num_stitches=&quot;12&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;12&quot; num_stitches=&quot;1455&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;13&quot; num_stitches=&quot;443&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;9&quot; num_stitches=&quot;563&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;1&quot; num_stitches=&quot;12&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;10&quot; num_stitches=&quot;108&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;5&quot; num_stitches=&quot;687&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;6&quot; num_stitches=&quot;684&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;21&quot; num_stitches=&quot;219&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;25&quot; num_stitches=&quot;220&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;3&quot; num_stitches=&quot;64&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;19&quot; num_stitches=&quot;247&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;16&quot; num_stitches=&quot;472&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;22&quot; num_stitches=&quot;338&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;15&quot; num_stitches=&quot;150&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;24&quot; num_stitches=&quot;548&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;1549&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;14&quot; num_stitches=&quot;938&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;12&quot; num_stitches=&quot;67&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;22&quot; num_stitches=&quot;246&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;4&quot; num_stitches=&quot;1021&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;17&quot; num_stitches=&quot;195&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;6&quot; num_stitches=&quot;5&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;8&quot; num_stitches=&quot;1430&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;27&quot; num_stitches=&quot;513&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;7&quot; num_stitches=&quot;230&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;15&quot; num_stitches=&quot;26&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;18&quot; num_stitches=&quot;1214&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;1&quot; num_stitches=&quot;15&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;3&quot; num_stitches=&quot;14&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;5747&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;22&quot; num_stitches=&quot;299&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;14&quot; num_stitches=&quot;37&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;4&quot; num_stitches=&quot;21&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;18&quot; num_stitches=&quot;42&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;8&quot; num_stitches=&quot;58&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;12&quot; num_stitches=&quot;7&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;48&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;20&quot; num_stitches=&quot;67&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;16&quot; num_stitches=&quot;26&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;11&quot; num_stitches=&quot;576&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-007">
+    <div class="entry-head">
+      <strong>W-007</strong>
+    </div>
+    <div class="comment-box"><strong>Comment</strong><p>Result has defects. Need to understand whether the source image has issues and whether we can detect them before sending the request to Wilcom.</p></div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-007-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-007-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-007-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;lenovo-0.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;&lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;lenovo-0.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-007-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;1405&quot; num_colours=&quot;2&quot; num_trims=&quot;2&quot; num_objects=&quot;7&quot; num_colour_changes=&quot;1&quot; height=&quot;19.0055555555556&quot; width=&quot;90.4&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;12501244&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R252 G192 B190&quot; /&gt;
+          &lt;thread color=&quot;199409&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R241 G10 B3&quot; /&gt;
+          &lt;thread color=&quot;16777215&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R255 G255 B255&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;1262&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;141&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-008">
+    <div class="entry-head">
+      <strong>W-008</strong>
+    </div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-008-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-008-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-008-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;instagram-logo-png-2428 _1_.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;&lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;instagram-logo-png-2428 _1_.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-008-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;9957&quot; num_colours=&quot;52&quot; num_trims=&quot;94&quot; num_objects=&quot;196&quot; num_colour_changes=&quot;92&quot; height=&quot;45.3666666666667&quot; width=&quot;45.3111111111111&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;13261146&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R90 G89 B202&quot; /&gt;
+          &lt;thread color=&quot;12799589&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R101 G78 B195&quot; /&gt;
+          &lt;thread color=&quot;12600942&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R110 G70 B192&quot; /&gt;
+          &lt;thread color=&quot;12338039&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R119 G67 B188&quot; /&gt;
+          &lt;thread color=&quot;11613596&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R156 G53 B177&quot; /&gt;
+          &lt;thread color=&quot;11614857&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R137 G58 B177&quot; /&gt;
+          &lt;thread color=&quot;12204436&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R148 G57 B186&quot; /&gt;
+          &lt;thread color=&quot;11483028&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R148 G55 B175&quot; /&gt;
+          &lt;thread color=&quot;11088795&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R155 G51 B169&quot; /&gt;
+          &lt;thread color=&quot;10302871&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R151 G53 B157&quot; /&gt;
+          &lt;thread color=&quot;11417009&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R177 G53 B174&quot; /&gt;
+          &lt;thread color=&quot;9711531&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R171 G47 B148&quot; /&gt;
+          &lt;thread color=&quot;16645629&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R253 G253 B253&quot; /&gt;
+          &lt;thread color=&quot;9383603&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R179 G46 B143&quot; /&gt;
+          &lt;thread color=&quot;9909147&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R155 G51 B151&quot; /&gt;
+          &lt;thread color=&quot;9449400&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R184 G47 B144&quot; /&gt;
+          &lt;thread color=&quot;9187518&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R190 G48 B140&quot; /&gt;
+          &lt;thread color=&quot;8859334&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R198 G46 B135&quot; /&gt;
+          &lt;thread color=&quot;8925120&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R192 G47 B136&quot; /&gt;
+          &lt;thread color=&quot;8400078&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R206 G44 B128&quot; /&gt;
+          &lt;thread color=&quot;7875541&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R213 G43 B120&quot; /&gt;
+          &lt;thread color=&quot;7679450&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R218 G45 B117&quot; /&gt;
+          &lt;thread color=&quot;7154908&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R220 G44 B109&quot; /&gt;
+          &lt;thread color=&quot;6964429&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R205 G68 B106&quot; /&gt;
+          &lt;thread color=&quot;7552708&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R196 G62 B115&quot; /&gt;
+          &lt;thread color=&quot;6109155&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R227 G55 B93&quot; /&gt;
+          &lt;thread color=&quot;7226056&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R200 G66 B110&quot; /&gt;
+          &lt;thread color=&quot;6634963&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R211 G61 B101&quot; /&gt;
+          &lt;thread color=&quot;6762720&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R224 G48 B103&quot; /&gt;
+          &lt;thread color=&quot;5260008&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R232 G66 B80&quot; /&gt;
+          &lt;thread color=&quot;5983954&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R210 G78 B91&quot; /&gt;
+          &lt;thread color=&quot;6310096&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R208 G72 B96&quot; /&gt;
+          &lt;thread color=&quot;4999402&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R234 G72 B76&quot; /&gt;
+          &lt;thread color=&quot;4542188&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R236 G78 B69&quot; /&gt;
+          &lt;thread color=&quot;5331163&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R219 G88 B81&quot; /&gt;
+          &lt;thread color=&quot;5721816&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R216 G78 B87&quot; /&gt;
+          &lt;thread color=&quot;4288750&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R238 G112 B65&quot; /&gt;
+          &lt;thread color=&quot;3629810&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R242 G98 B55&quot; /&gt;
+          &lt;thread color=&quot;3501815&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R247 G110 B53&quot; /&gt;
+          &lt;thread color=&quot;5264607&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R223 G84 B80&quot; /&gt;
+          &lt;thread color=&quot;5070816&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R224 G95 B77&quot; /&gt;
+          &lt;thread color=&quot;4282352&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R240 G87 B65&quot; /&gt;
+          &lt;thread color=&quot;4614632&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R232 G105 B70&quot; /&gt;
+          &lt;thread color=&quot;3374839&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R247 G126 B51&quot; /&gt;
+          &lt;thread color=&quot;3437299&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R243 G114 B52&quot; /&gt;
+          &lt;thread color=&quot;3969273&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R249 G144 B60&quot; /&gt;
+          &lt;thread color=&quot;3376374&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R246 G132 B51&quot; /&gt;
+          &lt;thread color=&quot;7524863&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R255 G209 B114&quot; /&gt;
+          &lt;thread color=&quot;5024253&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R253 G169 B76&quot; /&gt;
+          &lt;thread color=&quot;6867455&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R255 G201 B104&quot; /&gt;
+          &lt;thread color=&quot;6012414&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R254 G189 B91&quot; /&gt;
+          &lt;thread color=&quot;5420542&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R254 G181 B82&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;48&quot; num_stitches=&quot;171&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;22&quot; num_stitches=&quot;21&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;50&quot; num_stitches=&quot;181&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;49&quot; num_stitches=&quot;154&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;24&quot; num_stitches=&quot;40&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;13&quot; num_stitches=&quot;71&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;9&quot; num_stitches=&quot;67&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;3&quot; num_stitches=&quot;309&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;10&quot; num_stitches=&quot;69&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;155&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;5&quot; num_stitches=&quot;260&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;19&quot; num_stitches=&quot;117&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;29&quot; num_stitches=&quot;74&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;36&quot; num_stitches=&quot;138&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;43&quot; num_stitches=&quot;117&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;45&quot; num_stitches=&quot;103&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;51&quot; num_stitches=&quot;165&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;47&quot; num_stitches=&quot;124&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;45&quot; num_stitches=&quot;50&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;17&quot; num_stitches=&quot;217&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;20&quot; num_stitches=&quot;164&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;1&quot; num_stitches=&quot;175&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;4&quot; num_stitches=&quot;104&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;42&quot; num_stitches=&quot;47&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;30&quot; num_stitches=&quot;35&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;15&quot; num_stitches=&quot;146&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;16&quot; num_stitches=&quot;21&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;11&quot; num_stitches=&quot;165&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;37&quot; num_stitches=&quot;55&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;25&quot; num_stitches=&quot;59&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;32&quot; num_stitches=&quot;74&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;46&quot; num_stitches=&quot;109&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;23&quot; num_stitches=&quot;48&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;12&quot; num_stitches=&quot;593&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;207&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;11&quot; num_stitches=&quot;144&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;40&quot; num_stitches=&quot;44&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;34&quot; num_stitches=&quot;38&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;44&quot; num_stitches=&quot;20&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;38&quot; num_stitches=&quot;286&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;32&quot; num_stitches=&quot;111&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;25&quot; num_stitches=&quot;32&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;37&quot; num_stitches=&quot;259&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;26&quot; num_stitches=&quot;56&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;14&quot; num_stitches=&quot;76&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;9&quot; num_stitches=&quot;43&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;15&quot; num_stitches=&quot;148&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;20&quot; num_stitches=&quot;113&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;17&quot; num_stitches=&quot;189&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;18&quot; num_stitches=&quot;32&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;6&quot; num_stitches=&quot;173&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;8&quot; num_stitches=&quot;146&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;1&quot; num_stitches=&quot;2&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;21&quot; num_stitches=&quot;395&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;19&quot; num_stitches=&quot;170&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;27&quot; num_stitches=&quot;42&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;31&quot; num_stitches=&quot;18&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;39&quot; num_stitches=&quot;14&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;33&quot; num_stitches=&quot;196&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;29&quot; num_stitches=&quot;105&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;45&quot; num_stitches=&quot;80&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;43&quot; num_stitches=&quot;178&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;38&quot; num_stitches=&quot;23&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;41&quot; num_stitches=&quot;42&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;44&quot; num_stitches=&quot;91&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;24&quot; num_stitches=&quot;17&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;7&quot; num_stitches=&quot;87&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;18&quot; num_stitches=&quot;5&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;12&quot; num_stitches=&quot;26&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;13&quot; num_stitches=&quot;158&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;37&quot; num_stitches=&quot;45&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;20&quot; num_stitches=&quot;55&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;16&quot; num_stitches=&quot;120&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;46&quot; num_stitches=&quot;11&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;35&quot; num_stitches=&quot;25&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;25&quot; num_stitches=&quot;30&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;29&quot; num_stitches=&quot;2&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;36&quot; num_stitches=&quot;5&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;17&quot; num_stitches=&quot;2&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;22&quot; num_stitches=&quot;125&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;28&quot; num_stitches=&quot;157&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;22&quot; num_stitches=&quot;188&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;25&quot; num_stitches=&quot;53&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;12&quot; num_stitches=&quot;275&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;29&quot; num_stitches=&quot;70&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;21&quot; num_stitches=&quot;131&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;20&quot; num_stitches=&quot;96&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;21&quot; num_stitches=&quot;2&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;22&quot; num_stitches=&quot;80&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;28&quot; num_stitches=&quot;94&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;33&quot; num_stitches=&quot;50&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;32&quot; num_stitches=&quot;81&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;25&quot; num_stitches=&quot;94&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-009">
+    <div class="entry-head">
+      <strong>W-009</strong>
+    </div>
+    <div class="comment-box"><strong>Comment</strong><p>Unsatisfactory result: the background was removed, but not completely. Test again without background removal.</p></div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-009-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-009-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-009-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;ikea-1.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;&lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;ikea-1.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-009-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;3344&quot; num_colours=&quot;5&quot; num_trims=&quot;8&quot; num_objects=&quot;42&quot; num_colour_changes=&quot;4&quot; height=&quot;30.0555555555556&quot; width=&quot;78.5277777777778&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;10051845&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R5 G97 B153&quot; /&gt;
+          &lt;thread color=&quot;10242315&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R11 G73 B156&quot; /&gt;
+          &lt;thread color=&quot;10115842&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R2 G91 B154&quot; /&gt;
+          &lt;thread color=&quot;12016384&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R0 G91 B183&quot; /&gt;
+          &lt;thread color=&quot;53247&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R255 G207 B0&quot; /&gt;
+          &lt;thread color=&quot;1242111&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R255 G243 B18&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;4&quot; num_stitches=&quot;3084&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;1&quot; num_stitches=&quot;41&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;3&quot; num_stitches=&quot;21&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;27&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;5&quot; num_stitches=&quot;169&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-010">
+    <div class="entry-head">
+      <strong>W-010</strong>
+    </div>
+    <div class="comment-box"><strong>Comment</strong><p>Excellent result.</p></div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-010-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-010-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-010-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;icone-zakeke-21grammi_Tavola disegno 1.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;&lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;icone-zakeke-21grammi_Tavola disegno 1.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-010-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;1548&quot; num_colours=&quot;1&quot; num_trims=&quot;0&quot; num_objects=&quot;6&quot; num_colour_changes=&quot;0&quot; height=&quot;45.0777777777778&quot; width=&quot;41.8555555555556&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;4232119&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R183 G147 B64&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;1546&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-011">
+    <div class="entry-head">
+      <strong>W-011</strong>
+    </div>
+    <div class="comment-box"><strong>Comment</strong><p>Insufficient result. Need to understand whether it can be improved by changing API parameters.</p></div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-011-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-011-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-011-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;father-of-dragons-on-white.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;&lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;father-of-dragons-on-white.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-011-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;4075&quot; num_colours=&quot;2&quot; num_trims=&quot;3&quot; num_objects=&quot;45&quot; num_colour_changes=&quot;1&quot; height=&quot;45.2166666666667&quot; width=&quot;48.75&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;657666&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R2 G9 B10&quot; /&gt;
+          &lt;thread color=&quot;2564056&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R216 G31 B39&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;2563&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;1&quot; num_stitches=&quot;1510&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-012">
+    <div class="entry-head">
+      <strong>W-012</strong>
+    </div>
+    <div class="comment-box"><strong>Comment</strong><p>Same background removal issue as W-001, but it is probably manageable.</p></div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-012-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-012-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-012-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;Artboard 1.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;&lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;Artboard 1.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-012-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;2459&quot; num_colours=&quot;5&quot; num_trims=&quot;4&quot; num_objects=&quot;5&quot; num_colour_changes=&quot;4&quot; height=&quot;45.4111111111111&quot; width=&quot;32.4388888888889&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;9170934&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R246 G239 B139&quot; /&gt;
+          &lt;thread color=&quot;7794680&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R248 G239 B118&quot; /&gt;
+          &lt;thread color=&quot;16645629&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R253 G253 B253&quot; /&gt;
+          &lt;thread color=&quot;5785838&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R238 G72 B88&quot; /&gt;
+          &lt;thread color=&quot;4113544&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R136 G196 B62&quot; /&gt;
+          &lt;thread color=&quot;15322479&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R111 G205 B233&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;812&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;258&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;3&quot; num_stitches=&quot;390&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;1&quot; num_stitches=&quot;598&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;4&quot; num_stitches=&quot;399&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-013">
+    <div class="entry-head">
+      <strong>W-013</strong>
+    </div>
+    <div class="comment-box"><strong>Comment</strong><p>Needs improvement; investigate how to improve it.</p></div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-013-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-013-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-013-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;------Order_Quote_3763_3018_avvolgente_256485_1_2759943_1_35-wrap.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;&lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;------Order_Quote_3763_3018_avvolgente_256485_1_2759943_1_35-wrap.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-013-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;2946&quot; num_colours=&quot;3&quot; num_trims=&quot;3&quot; num_objects=&quot;26&quot; num_colour_changes=&quot;2&quot; height=&quot;31.7777777777778&quot; width=&quot;90.2444444444444&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;5920855&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R87 G88 B90&quot; /&gt;
+          &lt;thread color=&quot;2886635&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R235 G11 B44&quot; /&gt;
+          &lt;thread color=&quot;8487040&quot; code=&quot;&quot; brand=&quot;&quot; description=&quot;R128 G128 B129&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;1000&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;1260&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;1&quot; num_stitches=&quot;684&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-014">
+    <div class="entry-head">
+      <strong>W-014</strong>
+    </div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-014-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-014-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-014-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;Roer.png&quot; remove_background=&quot;false&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;
+    &lt;threads&gt;
+      &lt;thread color=&quot;3355596&quot; code=&quot;1&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#CC3333&quot; /&gt;
+      &lt;thread color=&quot;102&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#660000&quot; /&gt;
+      &lt;thread color=&quot;0&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#000000&quot; /&gt;
+      &lt;thread color=&quot;16777215&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+      &lt;thread color=&quot;1579159&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#971818&quot; /&gt;
+      &lt;thread color=&quot;65847&quot; code=&quot;6&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#370101&quot; /&gt;
+      &lt;thread color=&quot;7829468&quot; code=&quot;7&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#DC7777&quot; /&gt;
+      &lt;thread color=&quot;12237549&quot; code=&quot;8&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#EDBABA&quot; /&gt;
+    &lt;/threads&gt;
+  &lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;Roer.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-014-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;2861&quot; num_colours=&quot;4&quot; num_trims=&quot;5&quot; num_objects=&quot;16&quot; num_colour_changes=&quot;3&quot; height=&quot;45.1222222222222&quot; width=&quot;39.9388888888889&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;3355596&quot; code=&quot;1&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#CC3333&quot; /&gt;
+          &lt;thread color=&quot;0&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#000000&quot; /&gt;
+          &lt;thread color=&quot;102&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#660000&quot; /&gt;
+          &lt;thread color=&quot;16777215&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;1376&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;3&quot; num_stitches=&quot;283&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;1&quot; num_stitches=&quot;540&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;660&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-015">
+    <div class="entry-head">
+      <strong>W-015</strong>
+    </div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-015-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-015-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-015-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;Roer.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;
+    &lt;threads&gt;
+      &lt;thread color=&quot;13595392&quot; code=&quot;1&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#0073CF&quot; /&gt;
+      &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+      &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+      &lt;thread color=&quot;10890239&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF2BA6&quot; /&gt;
+      &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+    &lt;/threads&gt;
+  &lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;Roer.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-015-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;2862&quot; num_colours=&quot;3&quot; num_trims=&quot;4&quot; num_objects=&quot;16&quot; num_colour_changes=&quot;3&quot; height=&quot;45.1222222222222&quot; width=&quot;39.9388888888889&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;1687&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;3&quot; num_stitches=&quot;285&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;1&quot; num_stitches=&quot;540&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;348&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-016">
+    <div class="entry-head">
+      <strong>W-016</strong>
+    </div>
+    <div class="comment-box"><strong>Comment</strong><p>Although the request includes five colors, Wilcom uses only one. Test other gradients.</p></div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-016-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-016-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-016-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;flame-logo-PhotoRoom.png-PhotoRoom.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;
+    &lt;threads&gt;
+      &lt;thread color=&quot;13595392&quot; code=&quot;1&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#0073CF&quot; /&gt;
+      &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+      &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+      &lt;thread color=&quot;10890239&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF2BA6&quot; /&gt;
+      &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+    &lt;/threads&gt;
+  &lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;flame-logo-PhotoRoom.png-PhotoRoom.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-016-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;2075&quot; num_colours=&quot;1&quot; num_trims=&quot;0&quot; num_objects=&quot;78&quot; num_colour_changes=&quot;0&quot; height=&quot;45.2&quot; width=&quot;28.9777777777778&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;2073&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-017">
+    <div class="entry-head">
+      <strong>W-017</strong>
+    </div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-017-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-017-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-017-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;orange-fox-vector-clipart.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;
+    &lt;threads&gt;
+      &lt;thread color=&quot;13595392&quot; code=&quot;1&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#0073CF&quot; /&gt;
+      &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+      &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+      &lt;thread color=&quot;10890239&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF2BA6&quot; /&gt;
+      &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+    &lt;/threads&gt;
+  &lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;orange-fox-vector-clipart.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-017-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;2647&quot; num_colours=&quot;3&quot; num_trims=&quot;7&quot; num_objects=&quot;24&quot; num_colour_changes=&quot;2&quot; height=&quot;45.2944444444444&quot; width=&quot;41.2611111111111&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+          &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+          &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+          &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+          &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;1956&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;453&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;4&quot; num_stitches=&quot;236&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-018">
+    <div class="entry-head">
+      <strong>W-018</strong>
+    </div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-018-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-018-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-018-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;14_1.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;
+    &lt;threads&gt;
+      &lt;thread color=&quot;13595392&quot; code=&quot;1&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#0073CF&quot; /&gt;
+      &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+      &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+      &lt;thread color=&quot;10890239&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF2BA6&quot; /&gt;
+      &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+    &lt;/threads&gt;
+  &lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;14_1.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-018-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;7141&quot; num_colours=&quot;3&quot; num_trims=&quot;11&quot; num_objects=&quot;122&quot; num_colour_changes=&quot;10&quot; height=&quot;45.2166666666667&quot; width=&quot;53.6333333333333&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+          &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+          &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+          &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+          &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+          &lt;thread color=&quot;10890239&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF2BA6&quot; /&gt;
+          &lt;thread color=&quot;10890239&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF2BA6&quot; /&gt;
+          &lt;thread color=&quot;10890239&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF2BA6&quot; /&gt;
+          &lt;thread color=&quot;10890239&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF2BA6&quot; /&gt;
+          &lt;thread color=&quot;10890239&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF2BA6&quot; /&gt;
+          &lt;thread color=&quot;10890239&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF2BA6&quot; /&gt;
+          &lt;thread color=&quot;10890239&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF2BA6&quot; /&gt;
+          &lt;thread color=&quot;10890239&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF2BA6&quot; /&gt;
+          &lt;thread color=&quot;10890239&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF2BA6&quot; /&gt;
+          &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+          &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+          &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+          &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;1543&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;254&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;459&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;5&quot; num_stitches=&quot;1330&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;189&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;262&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;5&quot; num_stitches=&quot;1006&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;1854&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;5&quot; num_stitches=&quot;12&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;39&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;191&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-019">
+    <div class="entry-head">
+      <strong>W-019</strong>
+    </div>
+    <div class="comment-box"><strong>Comment</strong><p>Excellent result.</p></div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-019-source.jpg" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-019-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-019-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;smile.jpg&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;
+    &lt;threads&gt;
+      &lt;thread color=&quot;13595392&quot; code=&quot;1&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#0073CF&quot; /&gt;
+      &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+      &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+      &lt;thread color=&quot;10890239&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF2BA6&quot; /&gt;
+      &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+    &lt;/threads&gt;
+  &lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;smile.jpg&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-019-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;3701&quot; num_colours=&quot;2&quot; num_trims=&quot;3&quot; num_objects=&quot;7&quot; num_colour_changes=&quot;1&quot; height=&quot;45.4722222222222&quot; width=&quot;45.4722222222222&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+          &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+          &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+          &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;4&quot; num_stitches=&quot;2418&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;1&quot; num_stitches=&quot;1281&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-020">
+    <div class="entry-head">
+      <strong>W-020</strong>
+    </div>
+    <div class="comment-box"><strong>Comment</strong><p>Good result.</p></div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-020-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-020-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-020-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;Arcon _1_.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;
+    &lt;threads&gt;
+      &lt;thread color=&quot;13595392&quot; code=&quot;1&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#0073CF&quot; /&gt;
+      &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+      &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+      &lt;thread color=&quot;10890239&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF2BA6&quot; /&gt;
+      &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+    &lt;/threads&gt;
+  &lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;Arcon _1_.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-020-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;1913&quot; num_colours=&quot;1&quot; num_trims=&quot;2&quot; num_objects=&quot;9&quot; num_colour_changes=&quot;0&quot; height=&quot;45.3555555555556&quot; width=&quot;52.3388888888889&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;13595392&quot; code=&quot;1&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#0073CF&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;1911&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+<article id="W-021">
+    <div class="entry-head">
+      <strong>W-021</strong>
+    </div>
+    <div class="visuals">
+      <figure>
+        <figcaption>Source</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-021-source.png" alt="Source" /></div>
+      </figure>
+      <figure>
+        <figcaption>Result</figcaption>
+        <div class="image-frame"><img data-zoom src="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-021-result.png" alt="Result" /></div>
+      </figure>
+    </div>
+    <div class="xml-grid">
+      <details>
+        <summary>Request XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-021-request.xml" target="_blank" rel="noreferrer">Open full Request XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml&gt;
+  &lt;bitmap file=&quot;example.png&quot; remove_background=&quot;true&quot; /&gt;
+  &lt;autodigitize_options width=&quot;90&quot; height=&quot;45&quot;&gt;
+    &lt;threads&gt;
+      &lt;thread color=&quot;13595392&quot; code=&quot;1&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#0073CF&quot; /&gt;
+      &lt;thread color=&quot;16777215&quot; code=&quot;2&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FFFFFF&quot; /&gt;
+      &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+      &lt;thread color=&quot;10890239&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF2BA6&quot; /&gt;
+      &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+    &lt;/threads&gt;
+  &lt;/autodigitize_options&gt;
+  &lt;output trueview_file=&quot;trueview.png&quot; dpi=&quot;160&quot; /&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;example.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;
+</pre>
+      </details>
+      <details>
+        <summary>Response XML</summary>
+        <a class="xml-link" href="wilcom-success-report-2026-07-17T06-57-00-372Z-assets/W-021-response.xml" target="_blank" rel="noreferrer">Open full Response XML</a>
+        <pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;xml xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;
+  &lt;design_info machine_name=&quot;Tajima&quot; num_stitches=&quot;1829&quot; num_colours=&quot;4&quot; num_trims=&quot;7&quot; num_objects=&quot;33&quot; num_colour_changes=&quot;3&quot; height=&quot;45.2666666666667&quot; width=&quot;33.8777777777778&quot; num_appliques=&quot;0&quot; num_sequins=&quot;0&quot; num_blings=&quot;0&quot; num_beads=&quot;0&quot; hoop_name=&quot;No hoop selected&quot; comments=&quot;&quot; title=&quot;&quot; author=&quot;&quot; subject=&quot;&quot; keywords=&quot;&quot; design_grade=&quot;Native design&quot; design_status=&quot;&quot; order=&quot;&quot; order_date=&quot;0&quot; order_due=&quot;0&quot; order_notes=&quot;&quot; customer=&quot;&quot; contact=&quot;&quot; reference=&quot;&quot; sale_rep=&quot;&quot; product_type=&quot;&quot; position=&quot;&quot; quantity=&quot;&quot; product=&quot;&quot; product_colors=&quot;&quot; product_color_size_qty=&quot;&quot; emb_version=&quot;28.0&quot;&gt;
+    &lt;colorways&gt;
+      &lt;colorway name=&quot;Colorway 1&quot; bkg_color=&quot;14540253&quot; current=&quot;true&quot;&gt;
+        &lt;threads&gt;
+          &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+          &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+          &lt;thread color=&quot;10890239&quot; code=&quot;4&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF2BA6&quot; /&gt;
+          &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+          &lt;thread color=&quot;13595392&quot; code=&quot;1&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#0073CF&quot; /&gt;
+          &lt;thread color=&quot;5947492&quot; code=&quot;5&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#64C05A&quot; /&gt;
+          &lt;thread color=&quot;23551&quot; code=&quot;3&quot; brand=&quot;Embroidery Lab&quot; description=&quot;#FF5B00&quot; /&gt;
+        &lt;/threads&gt;
+      &lt;/colorway&gt;
+    &lt;/colorways&gt;
+    &lt;stop_sequence&gt;
+      &lt;stop_record color_idx=&quot;4&quot; num_stitches=&quot;463&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;0&quot; num_stitches=&quot;917&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;5&quot; num_stitches=&quot;434&quot; element=&quot;&quot; /&gt;
+      &lt;stop_record color_idx=&quot;2&quot; num_stitches=&quot;13&quot; element=&quot;&quot; /&gt;
+    &lt;/stop_sequence&gt;
+    &lt;lettering_objects /&gt;
+    &lt;monogram_objects /&gt;
+  &lt;/design_info&gt;
+  &lt;files&gt;
+    &lt;file filename=&quot;trueview.png&quot; filecontents=&quot;[base64 omitted in lightweight report; open full XML link above]&quot; filecontentmode=&quot;base64encoding&quot; /&gt;
+  &lt;/files&gt;
+&lt;/xml&gt;</pre>
+      </details>
+    </div>
+  </article>
+  </main>
+  <div id="lightbox" class="lightbox" aria-hidden="true"><img alt="" /></div>
+  <script>
+    const lightbox = document.querySelector("#lightbox");
+    const lightboxImage = lightbox.querySelector("img");
+    document.querySelectorAll("[data-zoom]").forEach((image) => {
+      image.addEventListener("click", () => {
+        lightboxImage.src = image.src;
+        lightbox.classList.add("open");
+        lightbox.setAttribute("aria-hidden", "false");
+      });
+    });
+    lightbox.addEventListener("click", () => {
+      lightbox.classList.remove("open");
+      lightbox.setAttribute("aria-hidden", "true");
+      lightboxImage.removeAttribute("src");
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+

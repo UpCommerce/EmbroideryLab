@@ -1,0 +1,337 @@
+{
+  "generatedAt": "2026-07-21T07:21:20.930Z",
+  "criteria": {
+    "requiredSuccessfulProvidersPerSource": [
+      "wilcom",
+      "pulse",
+      "melco"
+    ],
+    "exactProviderSetPerSource": true,
+    "allThreeResultsSuccessful": true,
+    "incompleteSourceExecutionsIncluded": false,
+    "historyScope": "all executions plus saved comparisons",
+    "reconstructedGroupWindowSeconds": 45,
+    "fourthProviderPreviewAvailablePerSource": true,
+    "fourthProviderPreviewSource": "manual Printful mapped results"
+  },
+  "compareCount": 18,
+  "sourceExecutionCount": 19,
+  "resultCount": 76,
+  "report": "three-provider-successful-executions.html",
+  "comparisons": [
+    {
+      "reportId": "C3-001",
+      "historyId": "reconstructed-2026-06-12t15-48-28-634z-arcon-1-png-unknown",
+      "createdAt": "2026-06-12T15:48:28.634Z",
+      "historySource": "reconstructed",
+      "sourceNames": [
+        "Arcon (1).png"
+      ],
+      "providersPerSource": [
+        "wilcom",
+        "pulse",
+        "melco",
+        "printful"
+      ],
+      "sourceExecutionCount": 1,
+      "resultCount": 4
+    },
+    {
+      "reportId": "C3-002",
+      "historyId": "reconstructed-2026-06-15t11-27-22-077z-smile-jpg-unknown",
+      "createdAt": "2026-06-15T11:27:22.077Z",
+      "historySource": "reconstructed",
+      "sourceNames": [
+        "smile.jpg"
+      ],
+      "providersPerSource": [
+        "wilcom",
+        "pulse",
+        "melco",
+        "printful"
+      ],
+      "sourceExecutionCount": 1,
+      "resultCount": 4
+    },
+    {
+      "reportId": "C3-003",
+      "historyId": "reconstructed-2026-06-15t11-27-46-841z-14-1-png-unknown",
+      "createdAt": "2026-06-15T11:27:46.841Z",
+      "historySource": "reconstructed",
+      "sourceNames": [
+        "14_1.png"
+      ],
+      "providersPerSource": [
+        "wilcom",
+        "pulse",
+        "melco",
+        "printful"
+      ],
+      "sourceExecutionCount": 1,
+      "resultCount": 4
+    },
+    {
+      "reportId": "C3-004",
+      "historyId": "reconstructed-2026-06-15t11-28-18-131z-orange-fox-vector-clipart-png-unknown",
+      "createdAt": "2026-06-15T11:28:18.131Z",
+      "historySource": "reconstructed",
+      "sourceNames": [
+        "orange-fox-vector-clipart.png"
+      ],
+      "providersPerSource": [
+        "wilcom",
+        "pulse",
+        "melco",
+        "printful"
+      ],
+      "sourceExecutionCount": 1,
+      "resultCount": 4
+    },
+    {
+      "reportId": "C3-005",
+      "historyId": "reconstructed-2026-06-15t11-28-41-761z-flame-logo-photoroom-png-photoroom-png-unknown",
+      "createdAt": "2026-06-15T11:28:41.761Z",
+      "historySource": "reconstructed",
+      "sourceNames": [
+        "flame-logo-PhotoRoom.png-PhotoRoom.png"
+      ],
+      "providersPerSource": [
+        "wilcom",
+        "pulse",
+        "melco",
+        "printful"
+      ],
+      "sourceExecutionCount": 1,
+      "resultCount": 4
+    },
+    {
+      "reportId": "C3-006",
+      "historyId": "reconstructed-2026-06-15t11-28-55-366z-roer-png-unknown",
+      "createdAt": "2026-06-15T11:28:55.366Z",
+      "historySource": "reconstructed",
+      "sourceNames": [
+        "Roer.png"
+      ],
+      "providersPerSource": [
+        "wilcom",
+        "pulse",
+        "melco",
+        "printful"
+      ],
+      "sourceExecutionCount": 1,
+      "resultCount": 4
+    },
+    {
+      "reportId": "C3-007",
+      "historyId": "reconstructed-2026-06-17t08-51-25-463z-order-quote-3763-3018-avvolgente-256485-1-2759943-1-35-wrap-png-unknown",
+      "createdAt": "2026-06-17T08:51:25.463Z",
+      "historySource": "reconstructed",
+      "sourceNames": [
+        "------Order_Quote_3763_3018_avvolgente_256485_1_2759943_1_35-wrap.png"
+      ],
+      "providersPerSource": [
+        "wilcom",
+        "pulse",
+        "melco",
+        "printful"
+      ],
+      "sourceExecutionCount": 1,
+      "resultCount": 4
+    },
+    {
+      "reportId": "C3-008",
+      "historyId": "reconstructed-2026-06-17t08-51-39-388z-artboard-1-png-unknown",
+      "createdAt": "2026-06-17T08:51:39.388Z",
+      "historySource": "reconstructed",
+      "sourceNames": [
+        "Artboard 1.png"
+      ],
+      "providersPerSource": [
+        "wilcom",
+        "pulse",
+        "melco",
+        "printful"
+      ],
+      "sourceExecutionCount": 1,
+      "resultCount": 4
+    },
+    {
+      "reportId": "C3-009",
+      "historyId": "reconstructed-2026-06-17t08-52-14-539z-father-of-dragons-on-white-png-unknown",
+      "createdAt": "2026-06-17T08:52:14.539Z",
+      "historySource": "reconstructed",
+      "sourceNames": [
+        "father-of-dragons-on-white.png"
+      ],
+      "providersPerSource": [
+        "wilcom",
+        "pulse",
+        "melco",
+        "printful"
+      ],
+      "sourceExecutionCount": 1,
+      "resultCount": 4
+    },
+    {
+      "reportId": "C3-010",
+      "historyId": "reconstructed-2026-06-17t08-52-54-159z-icone-zakeke-21grammi-tavola-disegno-1-png-unknown",
+      "createdAt": "2026-06-17T08:52:54.159Z",
+      "historySource": "reconstructed",
+      "sourceNames": [
+        "icone-zakeke-21grammi_Tavola disegno 1.png"
+      ],
+      "providersPerSource": [
+        "wilcom",
+        "pulse",
+        "melco",
+        "printful"
+      ],
+      "sourceExecutionCount": 1,
+      "resultCount": 4
+    },
+    {
+      "reportId": "C3-011",
+      "historyId": "reconstructed-2026-06-17t08-53-21-686z-ikea-1-png-unknown",
+      "createdAt": "2026-06-17T08:53:21.686Z",
+      "historySource": "reconstructed",
+      "sourceNames": [
+        "ikea-1.png"
+      ],
+      "providersPerSource": [
+        "wilcom",
+        "pulse",
+        "melco",
+        "printful"
+      ],
+      "sourceExecutionCount": 1,
+      "resultCount": 4
+    },
+    {
+      "reportId": "C3-012",
+      "historyId": "reconstructed-2026-06-17t08-53-50-016z-instagram-logo-png-2428-1-png-unknown",
+      "createdAt": "2026-06-17T08:53:50.016Z",
+      "historySource": "reconstructed",
+      "sourceNames": [
+        "instagram-logo-png-2428 (1).png"
+      ],
+      "providersPerSource": [
+        "wilcom",
+        "pulse",
+        "melco",
+        "printful"
+      ],
+      "sourceExecutionCount": 1,
+      "resultCount": 4
+    },
+    {
+      "reportId": "C3-013",
+      "historyId": "reconstructed-2026-06-17t08-54-09-679z-lenovo-0-png-unknown",
+      "createdAt": "2026-06-17T08:54:09.679Z",
+      "historySource": "reconstructed",
+      "sourceNames": [
+        "lenovo-0.png"
+      ],
+      "providersPerSource": [
+        "wilcom",
+        "pulse",
+        "melco",
+        "printful"
+      ],
+      "sourceExecutionCount": 1,
+      "resultCount": 4
+    },
+    {
+      "reportId": "C3-014",
+      "historyId": "reconstructed-2026-06-17t08-54-22-606z-logo-carr-2-png-unknown",
+      "createdAt": "2026-06-17T08:54:22.606Z",
+      "historySource": "reconstructed",
+      "sourceNames": [
+        "LOGO carré 2.png"
+      ],
+      "providersPerSource": [
+        "wilcom",
+        "pulse",
+        "melco",
+        "printful"
+      ],
+      "sourceExecutionCount": 1,
+      "resultCount": 4
+    },
+    {
+      "reportId": "C3-015",
+      "historyId": "reconstructed-2026-06-17t08-55-03-993z-out-png-unknown",
+      "createdAt": "2026-06-17T08:55:03.993Z",
+      "historySource": "reconstructed",
+      "sourceNames": [
+        "out.png"
+      ],
+      "providersPerSource": [
+        "wilcom",
+        "pulse",
+        "melco",
+        "printful"
+      ],
+      "sourceExecutionCount": 1,
+      "resultCount": 4
+    },
+    {
+      "reportId": "C3-016",
+      "historyId": "reconstructed-2026-06-17t08-55-49-782z-zakeke-wallpaper-png-unknown",
+      "createdAt": "2026-06-17T08:55:49.782Z",
+      "historySource": "reconstructed",
+      "sourceNames": [
+        "zakeke_wallpaper.png"
+      ],
+      "providersPerSource": [
+        "wilcom",
+        "pulse",
+        "melco",
+        "printful"
+      ],
+      "sourceExecutionCount": 1,
+      "resultCount": 4
+    },
+    {
+      "reportId": "C3-017",
+      "historyId": "cmp-2026-06-25T09-23-26-369Z-lrajtu",
+      "createdAt": "2026-06-25T09:23:26.369Z",
+      "historySource": "official",
+      "sourceNames": [
+        "flag-italy.png",
+        "pre_2_出産.png"
+      ],
+      "providersPerSource": [
+        "wilcom",
+        "pulse",
+        "melco",
+        "printful"
+      ],
+      "sourceExecutionCount": 2,
+      "resultCount": 8
+    },
+    {
+      "reportId": "C3-018",
+      "historyId": "cmp-2026-06-25T09-24-56-160Z-yyjba5",
+      "createdAt": "2026-06-25T09:24:56.161Z",
+      "historySource": "official",
+      "sourceNames": [
+        "pre_2_出産.png"
+      ],
+      "providersPerSource": [
+        "wilcom",
+        "pulse",
+        "melco",
+        "printful"
+      ],
+      "sourceExecutionCount": 1,
+      "resultCount": 4
+    }
+  ],
+  "fourthProvider": {
+    "id": "printful",
+    "label": "Printful",
+    "integrationType": "manually supplied previews",
+    "mappingFile": "fourth-provider-comparison/mapped-results/mapping.json",
+    "resultCount": 19
+  }
+}
